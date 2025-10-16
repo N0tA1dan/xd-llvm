@@ -1,0 +1,7 @@
+x 2023-10-14 replace if else branches in lexer with unordered_map
+
+2023-10-15 make a perfect hash for the lexer using gperf
+
+2023-10-15 update parser to successfully parse parenthesis. example: (10-5)+2
+
+2023-10-15 update generator completely.

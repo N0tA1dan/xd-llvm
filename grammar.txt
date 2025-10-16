@@ -1,0 +1,6 @@
+<prog> ::= <stmt>*
+<stmt> ::= "let" TYPE IDENTIFIER "=" <expression> | "fn" TYPE IDENTIFIER () '{' <stmt>* '}'
+<expression> ::= <term>
+<term> ::= <factor> (('+' | '-') <factor>)*
+<factor> ::= <primary-expr> (('*' | '/') <primary-expr>)*
+<primary-expr> ::= INT_LIT | IDENTIFIER
