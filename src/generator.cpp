@@ -63,6 +63,10 @@ void Generator::GenPrimaryExpr(PrimaryExprNode * primaryExpr){
         void operator()(IdentNode * ident){
 
         }
+        
+        void operator()(ExprNode * innerExpr){
+
+        }
     };
 
     std::visit(PrimaryExprVisitor{}, primaryExpr->var);

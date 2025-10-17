@@ -35,6 +35,19 @@ PrimaryExprNode * Parser::ParsePrimaryExpr(){
                     break;
                 }
 
+            case TokenType::OPEN_PAREN:
+                {
+                    eat();
+
+                    ExprNode * innerExpr = ParseExpr();
+
+                    TryEat(TokenType::CLOSE_PAREN);
+
+                    primaryexpr->var = innerExpr;
+
+                    break;
+                }
+
             default:
                 std::cerr << "Unexpected token type found while parsing primary expression" << std::endl;
                 break;
@@ -71,6 +84,27 @@ ExprNode * Parser::ParseFactor(){
 
                     BinOpExpr * binexpr = new BinOpExpr; 
                     binexpr->type = BinOpType::MUL;
+
+                    binexpr->lhs = lhsexpr;
+                    binexpr->rhs = rhsexpr;
+
+                    ExprNode * newexpr = new ExprNode;
+                    newexpr->var = binexpr;
+                    lhsexpr = newexpr;
+
+                    break;
+                }
+
+            case TokenType::DIV:
+                {
+                    isBinExpr = true;
+                    eat(); // eats * token
+                    auto rhs = ParsePrimaryExpr();
+                    ExprNode * rhsexpr = new ExprNode;
+                    rhsexpr->var = rhs;
+
+                    BinOpExpr * binexpr = new BinOpExpr; 
+                    binexpr->type = BinOpType::DIV;
 
                     binexpr->lhs = lhsexpr;
                     binexpr->rhs = rhsexpr;
@@ -125,6 +159,27 @@ ExprNode * Parser::ParseTerm(){
 
                     BinOpExpr * binexpr = new BinOpExpr; 
                     binexpr->type = BinOpType::ADD;
+
+                    binexpr->lhs = lhsexpr;
+                    binexpr->rhs = rhsexpr;
+
+                    ExprNode * newexpr = new ExprNode;
+                    newexpr->var = binexpr;
+                    lhsexpr = newexpr;
+
+                    break;
+                }
+
+            case TokenType::SUB:
+                {
+                    isBinExpr = true;
+                    eat(); // eats * token
+                    auto rhs = ParseFactor();
+                    ExprNode * rhsexpr = new ExprNode;
+                    rhsexpr = rhs;
+
+                    BinOpExpr * binexpr = new BinOpExpr; 
+                    binexpr->type = BinOpType::SUB;
 
                     binexpr->lhs = lhsexpr;
                     binexpr->rhs = rhsexpr;

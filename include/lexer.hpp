@@ -55,6 +55,7 @@ class Lexer{
             {"+", TokenType::ADD},
             {"-", TokenType::SUB},
             {"/", TokenType::DIV},
+            {"*", TokenType::MUL},
             {";", TokenType::SEMI},
             {"=", TokenType::EQUALS},
             {"(", TokenType::OPEN_PAREN},

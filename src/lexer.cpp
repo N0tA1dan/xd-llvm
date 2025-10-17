@@ -64,7 +64,7 @@ std::vector<Token> Lexer::lex(){
         }
 
         else {
-            std::cerr << "Unknown character: '" << peek().value() << "'\n";
+            std::cerr << "Unknown character: '" << peek().value() << std::endl;
             eat(); 
         }
     }

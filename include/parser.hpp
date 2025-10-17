@@ -20,11 +20,11 @@ struct IdentNode{
     Token val;
 };
 
-struct PrimaryExprNode{
-    std::variant<IntLitNode*, IdentNode*> var;
-};
-
 struct ExprNode;
+
+struct PrimaryExprNode{
+    std::variant<IntLitNode*, IdentNode*, ExprNode*> var;
+};
 
 struct BinOpExpr{
     BinOpType type;
