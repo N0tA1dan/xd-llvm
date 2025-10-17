@@ -120,7 +120,7 @@ void Generator::GenStmt(StmtNode * stmt){
 
             llvm::Type* ReturnType = nullptr; 
             // should prob make a function to do this 
-            switch(Function->prototype->return_type.type){
+            switch(Function->prototype->returnType.type){
                 case TokenType::INT:
                     ReturnType = llvm::Type::getInt32Ty(*TheContext);
                     break;
@@ -135,7 +135,7 @@ void Generator::GenStmt(StmtNode * stmt){
             // initializes the function object and checks if function has any arguments/parameters
             llvm::FunctionType * funcType = nullptr;
 
-            if(Function->prototype->arg_counter == 0){
+            if(Function->prototype->argCounter== 0){
                 funcType = llvm::FunctionType::get(ReturnType, false);
             } else{
                 // make sure to create a func with arguments here

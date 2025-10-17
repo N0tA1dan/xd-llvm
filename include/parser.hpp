@@ -40,8 +40,8 @@ struct StmtNode;
 
 struct ProtoTypeNode{
     Token name;
-    Token return_type;
-    int arg_counter;
+    Token returnType;
+    int argCounter;
     std::vector<StmtNode*> args;
 };
 

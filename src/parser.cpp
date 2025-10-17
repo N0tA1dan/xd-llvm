@@ -234,16 +234,16 @@ void Parser::TryEat(TokenType token){
 
 ProtoTypeNode * Parser::ParseProto(){
     auto proto = new ProtoTypeNode;
-    proto->return_type = eat(); // eat return type
+    proto->returnType= eat(); // eat return type
     proto->name = eat(); // eat name
 
     TryEat(TokenType::OPEN_PAREN);
  
-    proto->arg_counter = 0;
+    proto->argCounter= 0;
     // try to parse args?
     while(peek().has_value() && peek().value().type != TokenType::CLOSE_PAREN){
         proto->args.push_back(ParseStmt());
-        proto->arg_counter++;
+        proto->argCounter++;
     }
     TryEat(TokenType::CLOSE_PAREN);
     return proto;
