@@ -1,45 +1,45 @@
 cmake_minimum_required(VERSION 3.13)
-project(XD CXX C)
+project(xd LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
-# Find the LLVM package
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# --- Find LLVM ---
 find_package(LLVM REQUIRED CONFIG)
+
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
-# Include LLVM directories
+# --- Include LLVM directories and definitions ---
 include_directories(${LLVM_INCLUDE_DIRS} include)
+add_definitions(${LLVM_DEFINITIONS})
 
-# Add definitions from LLVM
-separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
-add_definitions(${LLVM_DEFINITIONS_LIST})
+# --- Add executable ---
+add_executable(xd
+    src/main.cpp
+    src/lexer.cpp
+    src/parser.cpp
+    src/generator.cpp
+)
 
-# Add executable
-# Find LLVM package
-find_package(LLVM REQUIRED CONFIG)
-message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+# --- Automatically detect and link all required LLVM components ---
+# Option 1: Explicit (recommended for control)
+llvm_map_components_to_libnames(LLVM_LIBS
+    Core
+    Support
+    IRReader
+    ExecutionEngine
+    MC
+    MCJIT
+    native
+)
 
-# Store LLVM include directories in cache
-set(LLVM_INCLUDE_DIRS ${LLVM_INCLUDE_DIRS} CACHE STRING "LLVM include directories")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+# Option 2 (uncomment this if you want CMake to auto-link *everything*):
+# set(LLVM_LIBS ${LLVM_AVAILABLE_LIBS})
 
-include_directories(${LLVM_INCLUDE_DIRS})
-separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
-add_definitions(${LLVM_DEFINITIONS_LIST})
+# --- Link target with LLVM ---
+target_link_libraries(xd PRIVATE ${LLVM_LIBS})
 
-add_executable(xd src/main.cpp src/lexer.cpp src/parser.cpp src/generator.cpp)
-
-# Map LLVM components to libraries
-llvm_map_components_to_libnames(llvm_libs support core irreader)
-
-# Link against LLVM libraries
-target_link_libraries(xd ${llvm_libs})
-
-# Manually specify compiler and linker flags
-set(LLVM_LD_FLAGS "-L${LLVM_LIBRARY_DIRS} -lLLVM")
-
-# Add compiler flags and linker flags manually
-target_compile_options(xd PRIVATE ${LLVM_CXX_FLAGS})
-target_link_libraries(xd ${LLVM_LD_FLAGS})
+# --- Optional: add LLVM compile flags ---
+target_compile_options(xd PRIVATE ${LLVM_COMPILE_FLAGS})
 
