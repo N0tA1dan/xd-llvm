@@ -32,3 +32,35 @@ fn int foo(){
 ```
 
 I went with this approach because it seemed more simpler to me. 
+
+# Compiling the compiler
+
+To compile this project you need a few things.
+
+If You're windows its preferable to use WSL. I personally used an ubuntu instance of WSL. Then within the Ubuntu session I installed LLVM from there.
+
+If you're on Linux then just install LLVM for your specific operating system. 
+
+Follow this guide here: https://llvm.org/docs/GettingStarted.html#getting-the-source-code-and-building-llvm
+
+Its prefered to build llvm with ninja as it is a bit faster than make in my experience.
+
+After installation you may do the following:
+
+```
+cd xd-llvm
+```
+
+```
+mkdir build && cd build
+```
+
+```
+cmake ..
+```
+
+```
+make
+````
+
+Now you have successfully compiled XD.
