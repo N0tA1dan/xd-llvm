@@ -1,0 +1,8 @@
+/mnt/c/Users/Public/Desktop/xd-llvm/build/CMakeFiles/intrinsics_gen.dir
+/mnt/c/Users/Public/Desktop/xd-llvm/build/CMakeFiles/vt_gen.dir
+/mnt/c/Users/Public/Desktop/xd-llvm/build/CMakeFiles/omp_gen.dir
+/mnt/c/Users/Public/Desktop/xd-llvm/build/CMakeFiles/acc_gen.dir
+/mnt/c/Users/Public/Desktop/xd-llvm/build/CMakeFiles/target_parser_gen.dir
+/mnt/c/Users/Public/Desktop/xd-llvm/build/CMakeFiles/xd.dir
+/mnt/c/Users/Public/Desktop/xd-llvm/build/CMakeFiles/edit_cache.dir
+/mnt/c/Users/Public/Desktop/xd-llvm/build/CMakeFiles/rebuild_cache.dir
