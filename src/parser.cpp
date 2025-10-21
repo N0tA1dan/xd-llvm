@@ -286,6 +286,7 @@ LetStmtNode * Parser::ParseLetStmt(){
 
 StmtNode * Parser::ParseStmt(){
     auto stmt = new StmtNode;
+
     // handles functions
     if(peek().value().type == TokenType::FN){
         eat(); // eat fn token

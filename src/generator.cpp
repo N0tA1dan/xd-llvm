@@ -5,6 +5,7 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
+#include "llvm/IR/GlobalVariable.h" 
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
@@ -18,6 +19,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+
 
 Generator::Generator(ProgNode * prog) : m_prog(prog){}
 
@@ -40,97 +42,150 @@ llvm::Type * VarType = nullptr;
 // for doing alloc stuff in functions. like %stack = alloca i32
 // had to modify to accept llvm::Type because the kaleidoscope tutorial was just treating everything as a double
 static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *TheFunction, llvm::Type * Type,llvm::StringRef VarName) {
+    // Check if the function is valid before accessing its members
+    if (!TheFunction) return nullptr;
+    
     llvm::IRBuilder<> TmpB(&TheFunction->getEntryBlock(), TheFunction->getEntryBlock().begin());
     return TmpB.CreateAlloca(Type, nullptr,VarName);
 }
 
 void InitializeModule(){
-      // Open a new context and module.
-      TheContext = std::make_unique<llvm::LLVMContext>();
-      TheModule = std::make_unique<llvm::Module>("XD Compiler", *TheContext);
+    // Open a new context and module.
+    TheContext = std::make_unique<llvm::LLVMContext>();
+    TheModule = std::make_unique<llvm::Module>("XD Compiler", *TheContext);
 
-      // Create a new builder for the module.
-      Builder = std::make_unique<llvm::IRBuilder<>>(*TheContext);
+    // Create a new builder for the module.
+    Builder = std::make_unique<llvm::IRBuilder<>>(*TheContext);
 }
 
-void Generator::GenPrimaryExpr(PrimaryExprNode * primaryExpr){
+llvm::Type* Generator::GetTypeFromToken(TokenType type) {
+    switch(type){
+        case TokenType::INT:
+            return llvm::Type::getInt32Ty(*TheContext);
+        case TokenType::FLOAT:
+            return llvm::Type::getFloatTy(*TheContext);
+        case TokenType::VOID:
+            return llvm::Type::getVoidTy(*TheContext);
+        default:
+            // DEBUG: Log the unhandled token type value
+            llvm::errs() << "DEBUG: Unhandled TokenType (" << (int)type << ") in GetTypeFromToken.\n";
+            return nullptr;
+    }
+}
+
+llvm::Value* Generator::GenPrimaryExpr(PrimaryExprNode * primaryExpr){
     struct PrimaryExprVisitor{
+        Generator & generator;
+        llvm::Value* result = nullptr; // Holds the result of the visit
 
         void operator()(IntLitNode * intLit){
-
+            
+            std::string intValueStr = intLit->val.value.value();
+            
+            result = Builder->getInt32(std::stoi(intValueStr));
         }
 
         void operator()(IdentNode * ident){
-
+            // Placeholder: Should load value from NamedValues or GlobalValues
+            // result = generator.LoadVariable(ident->value.value());
         }
         
         void operator()(ExprNode * innerExpr){
-
+            // Placeholder
         }
     };
 
-    std::visit(PrimaryExprVisitor{}, primaryExpr->var);
+    PrimaryExprVisitor visitor = {*this};
+    std::visit(visitor, primaryExpr->var);
+    return visitor.result;
 }
 
-void Generator::GenExpr(ExprNode * expr){
+llvm::Value* Generator::GenExpr(ExprNode * expr){
     struct ExprVisitor{
         Generator & generator;
+        llvm::Value* result = nullptr; 
 
         void operator()(PrimaryExprNode * primaryExpr){
+            result = generator.GenPrimaryExpr(primaryExpr);
         }
 
         void operator()(BinOpExpr * binExpr){
-
+            // Placeholder
         }
-
-
     };
-    std::visit(ExprVisitor{*this}, expr->var);
+    ExprVisitor visitor = {*this};
+    std::visit(visitor, expr->var);
+    return visitor.result;
 }
 
 void Generator::GenStmt(StmtNode * stmt){
     struct StmtVisitor{
         Generator & generator;
         
-
         void operator()(LetStmtNode * LetStmt){
-            llvm::Type * VarType = nullptr;
+            // Fixed the call: The helper is a member of Generator, not the StmtVisitor.
+            llvm::Type * VarType = generator.GetTypeFromToken(LetStmt->type.type);
+            if (!VarType) return; // Error handling for unknown type
 
-            switch(LetStmt->type.type){
-                case TokenType::INT:
-                    VarType = llvm::Type::getInt32Ty(*TheContext);
-                    break;
-                case TokenType::FLOAT:
-                    VarType = llvm::Type::getFloatTy(*TheContext);
-                    break;
-                case TokenType::VOID:
-                    VarType = llvm::Type::getVoidTy(*TheContext);
-                    break;
+            // Handle Global vs Local Declarations
+            if (CurrentFunc == nullptr) {
+                // Global Variable Declaration
+                
+                // For now, we only handle uninitialized or zero-initialized globals.
+                // TODO: Implement expression generation to handle initializer (LetStmt->initializer)
+                
+                llvm::Constant * Initializer = nullptr;
+                if (VarType->isIntegerTy()) {
+                    // Default to 0 for integers
+                    Initializer = llvm::ConstantInt::get(VarType, 0);
+                } else if (VarType->isFloatTy()) {
+                    // Default to 0.0 for floats
+                    Initializer = llvm::ConstantFP::get(VarType, 0.0);
+                } else {
+                    // Handle other types or skip
+                    return;
+                }
+
+                llvm::GlobalVariable* GlobalVar = new llvm::GlobalVariable(
+                    *TheModule, // Module to add to
+                    VarType,    // Type
+                    false,      // isConstant (Mutable)
+                    llvm::GlobalValue::ExternalLinkage, // Linkage type
+                    Initializer, // Initializer
+                    LetStmt->identifier.value.value() // Name
+                );
+                
+                GlobalValues[LetStmt->identifier.value.value()] = GlobalVar;
+                return;
+
+            } else {
+                // Local Variable Declaration (inside a function)
+                llvm::AllocaInst* Alloc = CreateEntryBlockAlloca(CurrentFunc, VarType, LetStmt->identifier.value.value());
+                
+                // TODO: Replace with actual expression generation (generator.GenExpr(LetStmt->initializer))
+                // Currently storing a hardcoded value 10 for i32, which is dangerous if VarType is float or another type
+                if (VarType->isIntegerTy(32)) {
+                    // This section now needs to call GenExpr
+                    // llvm::Value* InitialValue = generator.GenExpr(LetStmt->initializer);
+                    llvm::Value* InitialValue = Builder->getInt32(10);
+                    Builder->CreateStore(InitialValue, Alloc);
+                }
+                
+                NamedValues[LetStmt->identifier.value.value()] = Alloc;
+                return;
             }
-
-            llvm::AllocaInst* Alloc = CreateEntryBlockAlloca(CurrentFunc, VarType, LetStmt->identifier.value.value());
-            // fix this to instead call gen expression
-            Builder->CreateStore(Builder->getInt32(10), Alloc);
-            NamedValues[LetStmt->identifier.value.value()] = Alloc;
-            
-            return;
         }
 
         void operator()(FunctionNode * Function){
 
-            llvm::Type* ReturnType = nullptr; 
-            // should prob make a function to do this 
-            switch(Function->prototype->returnType.type){
-                case TokenType::INT:
-                    ReturnType = llvm::Type::getInt32Ty(*TheContext);
-                    break;
-                case TokenType::FLOAT:
-                    ReturnType = llvm::Type::getFloatTy(*TheContext);
-                    break;
-                case TokenType::VOID:
-                    ReturnType = llvm::Type::getVoidTy(*TheContext);
-                    break;
-            }
+            llvm::Type* ReturnType = generator.GetTypeFromToken(Function->prototype->returnType.type);
+            
+            if (!ReturnType) {
+                // DEBUG: Log the failure and function name
+                llvm::errs() << "DEBUG: Function Gen failed - ReturnType is null for function: " 
+                             << Function->prototype->name.value.value() << "\n";
+                return; // Early exit if return type is unknown/unhandled
+            } 
 
             // initializes the function object and checks if function has any arguments/parameters
             llvm::FunctionType * funcType = nullptr;
@@ -139,6 +194,16 @@ void Generator::GenStmt(StmtNode * stmt){
                 funcType = llvm::FunctionType::get(ReturnType, false);
             } else{
                 // make sure to create a func with arguments here
+                // Placeholder for argument handling
+                std::vector<llvm::Type*> ArgTypes;
+                // Assuming Function->prototype->args is a vector of Type/Ident pairs
+                // for (const auto& arg : Function->prototype->args) {
+                //     ArgTypes.push_back(generator.GetTypeFromToken(arg.type.type));
+                // }
+                // funcType = llvm::FunctionType::get(ReturnType, ArgTypes, false);
+                
+                // Using no args for now until AST structure for args is clearer
+                funcType = llvm::FunctionType::get(ReturnType, false);
             }
 
             // Create function object
@@ -157,6 +222,7 @@ void Generator::GenStmt(StmtNode * stmt){
             NamedValues.clear();
             CurrentFunc = func;
 
+
             // generate all statements made in function body
             for(auto stmt : Function->body){
                 generator.GenStmt(stmt);
@@ -171,6 +237,8 @@ void Generator::GenStmt(StmtNode * stmt){
             }
 
             llvm::verifyFunction(*func);
+            // Clear CurrentFunc after function generation completes
+            CurrentFunc = nullptr;
         }
     };
 
@@ -179,8 +247,10 @@ void Generator::GenStmt(StmtNode * stmt){
 }
 
 void Generator::Generate(){
-    // intializes llvm's stuff to generate stuff 
+
+    // initialize llvm and get ready to begin codegen
     InitializeModule();
+
     for(auto stmt : m_prog->stmts){
         Generator::GenStmt(stmt);
     }

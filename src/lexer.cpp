@@ -31,6 +31,8 @@ std::vector<Token> Lexer::lex(){
 
             if(m_TokenMap.contains(buffer) == true){
                 tokens.push_back({m_TokenMap.at(buffer), std::nullopt});
+                eat();
+                buffer.clear();
                 continue;
             }
 
@@ -56,11 +58,6 @@ std::vector<Token> Lexer::lex(){
             tokens.push_back({ m_TokenMap.at(std::string(1, eat())), std::nullopt });
             buffer.clear();
             continue;
-        }
-
-        // ignore whitespace
-        else if(isspace(peek().value())){
-            eat();
         }
 
         else {

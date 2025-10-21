@@ -31,9 +31,17 @@ class Generator{
 
     public:
         Generator(ProgNode * prog);
+
+        // --- ADDED/MODIFIED DECLARATIONS BELOW ---
+        // New helper function to get LLVM Type
+        llvm::Type* GetTypeFromToken(TokenType type); 
         
-        void GenPrimaryExpr(PrimaryExprNode * primaryExpr);
-        void GenExpr(ExprNode * expr);
+        // Return type changed from void to llvm::Value*
+        llvm::Value* GenPrimaryExpr(PrimaryExprNode * primaryExpr);
+        
+        // Return type changed from void to llvm::Value*
+        llvm::Value* GenExpr(ExprNode * expr);
+        
         void GenStmt(StmtNode * stmt);
         void Generate();
 
