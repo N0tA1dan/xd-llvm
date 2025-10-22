@@ -162,12 +162,10 @@ void Generator::GenStmt(StmtNode * stmt){
                 // Local Variable Declaration (inside a function)
                 llvm::AllocaInst* Alloc = CreateEntryBlockAlloca(CurrentFunc, VarType, LetStmt->identifier.value.value());
                 
-                // TODO: Replace with actual expression generation (generator.GenExpr(LetStmt->initializer))
-                // Currently storing a hardcoded value 10 for i32, which is dangerous if VarType is float or another type
                 if (VarType->isIntegerTy(32)) {
                     // This section now needs to call GenExpr
-                    // llvm::Value* InitialValue = generator.GenExpr(LetStmt->initializer);
-                    llvm::Value* InitialValue = Builder->getInt32(10);
+                    llvm::Value* InitialValue = generator.GenExpr(LetStmt->expression);
+                    // llvm::Value* InitialValue = Builder->getInt32(10);
                     Builder->CreateStore(InitialValue, Alloc);
                 }
                 
