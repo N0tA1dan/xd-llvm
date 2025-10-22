@@ -91,7 +91,8 @@ llvm::Value* Generator::GenPrimaryExpr(PrimaryExprNode * primaryExpr){
         }
         
         void operator()(ExprNode * innerExpr){
-            // Placeholder
+            // FIX: This case handles expressions wrapped in parentheses, like (10+5).
+            result = generator.GenExpr(innerExpr);
         }
     };
 
@@ -101,6 +102,13 @@ llvm::Value* Generator::GenPrimaryExpr(PrimaryExprNode * primaryExpr){
 }
 
 llvm::Value* Generator::GenExpr(ExprNode * expr){
+
+    if (!expr) {
+        llvm::errs() << "ERROR: GenExpr called with nullptr ExprNode\n";
+        return nullptr;
+    }
+
+
     struct ExprVisitor{
         Generator & generator;
         llvm::Value* result = nullptr; 
@@ -110,9 +118,33 @@ llvm::Value* Generator::GenExpr(ExprNode * expr){
         }
 
         void operator()(BinOpExpr * binExpr){
-            // Placeholder
+            llvm::Value * leftHandSide = generator.GenExpr(binExpr->lhs);
+            llvm::Value * rightHandSide = generator.GenExpr(binExpr->rhs);
+            
+            // Check for null operands (like from the unhandled PrimaryExpr case)
+            if (!leftHandSide || !rightHandSide) {
+                llvm::errs() << "ERROR: Null operand encountered in binary expression.\n";
+                result = nullptr;
+                return;
+            }
+
+            switch(binExpr->type){
+                case BinOpType::ADD:
+                    result = Builder->CreateAdd(leftHandSide, rightHandSide);
+                    break;
+
+                case BinOpType::SUB:
+                    result = Builder->CreateSub(leftHandSide, rightHandSide);
+                    break;
+                case BinOpType::MUL:
+                    result = Builder->CreateMul(leftHandSide, rightHandSide);
+                default:
+                    llvm::errs() << "DEBUG: Error unknown operation between expression" << '\n'; 
+                    break;
+            }
         }
     };
+
     ExprVisitor visitor = {*this};
     std::visit(visitor, expr->var);
     return visitor.result;
@@ -165,8 +197,14 @@ void Generator::GenStmt(StmtNode * stmt){
                 if (VarType->isIntegerTy(32)) {
                     // This section now needs to call GenExpr
                     llvm::Value* InitialValue = generator.GenExpr(LetStmt->expression);
-                    // llvm::Value* InitialValue = Builder->getInt32(10);
-                    Builder->CreateStore(InitialValue, Alloc);
+                    
+                    if (InitialValue) {
+                         Builder->CreateStore(InitialValue, Alloc);
+                    } else {
+                        // Handle case where InitialValue is null (e.g., if there was an error in GenExpr)
+                        llvm::errs() << "ERROR: Failed to generate IR for initializer expression of variable: " 
+                                     << LetStmt->identifier.value.value() << "\n";
+                    }
                 }
                 
                 NamedValues[LetStmt->identifier.value.value()] = Alloc;
