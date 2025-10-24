@@ -93,8 +93,15 @@ llvm::Value* Generator::GenPrimaryExpr(PrimaryExprNode * primaryExpr){
         }
 
         void operator()(IdentNode * ident){
-            // Placeholder: Should load value from NamedValues or GlobalValues
-            // result = generator.LoadVariable(ident->value.value());
+
+            // currently inside a function
+            if(CurrentFunc != nullptr){
+                llvm::Value* variable = NamedValues.at(ident->val.value.value());
+                result = variable;
+            } else{
+                // load value from GlobalValues
+            }
+
         }
         
         void operator()(ExprNode * innerExpr){

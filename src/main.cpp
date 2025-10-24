@@ -90,7 +90,7 @@ int main(int argc, char * argv[]){
 
     Lexer lex(buffer.str());
     std::vector<Token> tokens = lex.lex();
-    print_tokens(tokens);
+    //print_tokens(tokens);
 
     Parser parser(tokens);
     auto prog = parser.Parse();
