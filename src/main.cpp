@@ -31,7 +31,7 @@ void print_tokens(const std::vector<Token> & tokens){
                 break;
 
             case TokenType::IDENT:
-                std::cout << "IDENT TOKEN" << std::endl;
+                std::cout << "IDENT TOKEN: " << token.value.value()<< std::endl;
 
                 break;
 
@@ -39,8 +39,8 @@ void print_tokens(const std::vector<Token> & tokens){
                 std::cout << "INT_LIT TOKEN" << std::endl;
                 break;
 
-            case TokenType::EQUALS:
-                std::cout << "EQUALS TOKEN" << std::endl;
+            case TokenType::EQUAL:
+                std::cout << "EQUAL TOKEN" << std::endl;
                 break;
 
             case TokenType::SEMI:
@@ -65,6 +65,14 @@ void print_tokens(const std::vector<Token> & tokens){
 
             case TokenType::CLOSE_BRACKET:
                 std::cout << "CLOSE_BRACKET TOKEN" << std::endl;
+                break;
+
+            case TokenType::ADD_EQ:
+                std::cout << "ADD_EQ TOKEN" << std::endl;
+                break;
+            
+            case TokenType::EQUAL_TO:
+                std::cout << "EQUAL_TO TOKEN" << std::endl;
                 break;
         }
     }

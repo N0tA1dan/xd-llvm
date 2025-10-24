@@ -204,6 +204,7 @@ ExprNode * Parser::ParseTerm(){
     return lhsexpr;
 }
 
+
 ExprNode * Parser::ParseExpr(){
     ExprNode * expr = ParseTerm();
     return expr;
@@ -274,7 +275,7 @@ LetStmtNode * Parser::ParseLetStmt(){
 
     letstmt->identifier = eat();
 
-    TryEat(TokenType::EQUALS);
+    TryEat(TokenType::EQUAL);
 
     letstmt->expression = ParseExpr();
 

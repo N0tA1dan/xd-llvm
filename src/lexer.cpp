@@ -25,13 +25,12 @@ std::vector<Token> Lexer::lex(){
         if(std::isalpha(peek().value())){
             buffer.push_back(eat());
 
-            while(std::isalpha(peek().value())){
+            while(std::isalnum(peek().value()) || peek().value() == '_' ){
                 buffer.push_back(eat());
             }
 
             if(m_TokenMap.contains(buffer) == true){
                 tokens.push_back({m_TokenMap.at(buffer), std::nullopt});
-                eat();
                 buffer.clear();
                 continue;
             }
@@ -53,12 +52,82 @@ std::vector<Token> Lexer::lex(){
             continue;
         }
 
-        // handles special characters
-        else if (auto c = peek().value(); m_TokenMap.contains(std::string(1, c))) {
-            tokens.push_back({ m_TokenMap.at(std::string(1, eat())), std::nullopt });
+        // handles whitespace 
+        else if(isspace(peek().value())){
+            eat();
+            continue;
+        }
+
+        else if(peek().value()){
+            TokenType type;
+
+            switch(peek().value()){
+                case '+':
+                    if(peek(1).value() == '=') {
+                        type = TokenType::ADD_EQ;
+                        eat();
+                    } else{
+                        type = TokenType::ADD;
+                    }
+                    break;
+
+                case '-':
+                    if(peek(1).value() == '=') {
+                        type = TokenType::SUB_EQ;
+                        eat();
+                    } else{
+                        type = TokenType::SUB;
+                    }
+                    break;
+
+                case '*':
+                    if(peek(1).value() == '=') {
+                        type = TokenType::MUL_EQ;
+                        eat();
+                    } else{
+                        type = TokenType::MUL;
+                    }
+                    break;
+
+                case '=':
+                    if(peek(1).value() == '='){
+                        type = TokenType::EQUAL_TO;
+                    } else{
+                        type = TokenType::EQUAL;
+                    }
+                    break;
+                
+                case '(':
+                    type = TokenType::OPEN_PAREN;
+                    break;
+                
+                case ')':
+                    type = TokenType::CLOSE_PAREN;
+                    break;
+
+                case '{':
+                    type = TokenType::OPEN_BRACKET;
+                    break;
+                
+                case '}':
+                    type = TokenType::CLOSE_BRACKET;
+                    break;
+                
+                case ';':
+                    type = TokenType::SEMI;
+                    break;
+
+                default:
+                    std::cerr<< "Lexer Error: Unknown character detected " << peek().value() << std::endl;
+                    break;
+            }
+
+            tokens.push_back({type, std::nullopt});
+            eat();
             buffer.clear();
             continue;
         }
+       
 
         else {
             std::cerr << "Unknown character: '" << peek().value() << std::endl;
