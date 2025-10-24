@@ -85,6 +85,13 @@ llvm::Value* Generator::GenPrimaryExpr(PrimaryExprNode * primaryExpr){
             result = Builder->getInt32(std::stoi(intValueStr));
         }
 
+        void operator()(FloatLitNode* floatLit){
+            
+            std::string floatValueStr = floatLit->val.value.value();
+            
+            result = llvm::ConstantFP::get(llvm::Type::getFloatTy(*TheContext), std::stof(floatValueStr));
+        }
+
         void operator()(IdentNode * ident){
             // Placeholder: Should load value from NamedValues or GlobalValues
             // result = generator.LoadVariable(ident->value.value());
@@ -194,7 +201,7 @@ void Generator::GenStmt(StmtNode * stmt){
                 // Local Variable Declaration (inside a function)
                 llvm::AllocaInst* Alloc = CreateEntryBlockAlloca(CurrentFunc, VarType, LetStmt->identifier.value.value());
                 
-                if (VarType->isIntegerTy(32)) {
+                if (VarType->isIntegerTy(32) || VarType->isFloatTy()) {
                     // This section now needs to call GenExpr
                     llvm::Value* InitialValue = generator.GenExpr(LetStmt->expression);
                     

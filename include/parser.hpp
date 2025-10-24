@@ -16,6 +16,10 @@ struct IntLitNode{
     Token val;
 };
 
+struct FloatLitNode{
+    Token val;
+};
+
 struct IdentNode{
     Token val;
 };
@@ -23,7 +27,7 @@ struct IdentNode{
 struct ExprNode;
 
 struct PrimaryExprNode{
-    std::variant<IntLitNode*, IdentNode*, ExprNode*> var;
+    std::variant<IntLitNode*, FloatLitNode*, IdentNode*, ExprNode*> var;
 };
 
 struct BinOpExpr{

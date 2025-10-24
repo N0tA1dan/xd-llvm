@@ -38,6 +38,10 @@ void print_tokens(const std::vector<Token> & tokens){
             case TokenType::INT_LIT:
                 std::cout << "INT_LIT TOKEN" << std::endl;
                 break;
+            
+            case TokenType::FLOAT_LIT:
+                std::cout << "FLOAT_LIT TOKEN"<<std::endl;
+                break;
 
             case TokenType::EQUAL:
                 std::cout << "EQUAL TOKEN" << std::endl;
@@ -86,7 +90,7 @@ int main(int argc, char * argv[]){
 
     Lexer lex(buffer.str());
     std::vector<Token> tokens = lex.lex();
-    //print_tokens(tokens);
+    print_tokens(tokens);
 
     Parser parser(tokens);
     auto prog = parser.Parse();

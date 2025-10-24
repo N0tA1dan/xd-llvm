@@ -47,8 +47,22 @@ std::vector<Token> Lexer::lex(){
             while(isdigit(peek().value())){
                 buffer.push_back(eat());
             }
-            tokens.push_back({TokenType::INT_LIT, buffer});
-            buffer.clear();
+            
+            // handles floating point
+            if(peek().has_value() && peek().value() == '.'){
+                buffer.push_back(eat());
+
+                while(isdigit(peek().value())){
+                    buffer.push_back(eat());
+                }
+
+                tokens.push_back({TokenType::FLOAT_LIT, buffer});
+                buffer.clear();
+            } else {
+                tokens.push_back({TokenType::INT_LIT, buffer});
+                buffer.clear();
+            }
+
             continue;
         }
 

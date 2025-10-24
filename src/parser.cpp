@@ -21,9 +21,17 @@ PrimaryExprNode * Parser::ParsePrimaryExpr(){
         switch(peek().value().type){
             case TokenType::INT_LIT:
                 {
-                    IntLitNode * intlit = new IntLitNode;
-                    intlit->val = eat();
-                    primaryexpr->var = intlit;
+                    IntLitNode * intLit = new IntLitNode;
+                    intLit->val = eat();
+                    primaryexpr->var = intLit;
+                    break;
+                }
+
+            case TokenType::FLOAT_LIT:
+                {
+                    FloatLitNode * floatLit = new FloatLitNode;
+                    floatLit->val = eat();
+                    primaryexpr->var = floatLit;
                     break;
                 }
 
