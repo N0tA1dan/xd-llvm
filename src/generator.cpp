@@ -94,18 +94,29 @@ llvm::Value* Generator::GenPrimaryExpr(PrimaryExprNode * primaryExpr){
 
         void operator()(IdentNode * ident){
 
-            // currently inside a function
-            if(CurrentFunc != nullptr){
-                llvm::Value* variable = NamedValues.at(ident->val.value.value());
-                result = variable;
-            } else{
-                // load value from GlobalValues
+            // global variable generation
+            if(CurrentFunc == nullptr){
+                
             }
 
+            // currently inside a function
+            if(CurrentFunc != nullptr){
+
+                std::string variableName = ident->val.value.value();
+
+                if(NamedValues.find(ident->val.value.value()) == NamedValues.end()){
+                    llvm::errs() << "Error: Undefined variable: " << variableName << '\n';
+                    result = nullptr;
+                }
+
+                llvm::AllocaInst* variable = NamedValues.at(variableName);
+                llvm::Type* variableType = variable->getAllocatedType();
+                result = Builder->CreateLoad(variableType, variable);
+            } 
         }
         
+        // Handles expressions within parenthesis. Eg: (10*5)
         void operator()(ExprNode * innerExpr){
-            // FIX: This case handles expressions wrapped in parentheses, like (10+5).
             result = generator.GenExpr(innerExpr);
         }
     };
@@ -132,8 +143,12 @@ llvm::Value* Generator::GenExpr(ExprNode * expr){
         }
 
         void operator()(BinOpExpr * binExpr){
+
             llvm::Value * leftHandSide = generator.GenExpr(binExpr->lhs);
             llvm::Value * rightHandSide = generator.GenExpr(binExpr->rhs);
+
+            llvm::Type * leftType = leftHandSide->getType();
+            llvm::Type * rightType = rightHandSide->getType();
             
             // Check for null operands (like from the unhandled PrimaryExpr case)
             if (!leftHandSide || !rightHandSide) {
@@ -142,19 +157,47 @@ llvm::Value* Generator::GenExpr(ExprNode * expr){
                 return;
             }
 
-            switch(binExpr->type){
-                case BinOpType::ADD:
-                    result = Builder->CreateAdd(leftHandSide, rightHandSide);
-                    break;
+            // creates operations specifically for integer types
+            if(leftType->isIntegerTy() == true && rightType->isIntegerTy() == true){
+                switch(binExpr->type){
+                    case BinOpType::ADD:
+                        result = Builder->CreateAdd(leftHandSide, rightHandSide);
+                        break;
 
-                case BinOpType::SUB:
-                    result = Builder->CreateSub(leftHandSide, rightHandSide);
-                    break;
-                case BinOpType::MUL:
-                    result = Builder->CreateMul(leftHandSide, rightHandSide);
-                default:
-                    llvm::errs() << "DEBUG: Error unknown operation between expression" << '\n'; 
-                    break;
+                    case BinOpType::SUB:
+                        result = Builder->CreateSub(leftHandSide, rightHandSide);
+                        break;
+                    case BinOpType::MUL:
+                        result = Builder->CreateMul(leftHandSide, rightHandSide);
+                        break;
+                    default:
+                        llvm::errs() << "DEBUG: Error unknown operation between expression" << '\n'; 
+                        break;
+                }
+            }
+
+            // use floating point llvm instructions instead
+            if(leftType->isFloatingPointTy() == true && rightType->isFloatingPointTy() == true){
+
+                switch(binExpr->type){
+                    case BinOpType::ADD:
+                        result = Builder->CreateFAdd(leftHandSide, rightHandSide);
+                        break;
+
+                    case BinOpType::SUB:
+                        result = Builder->CreateFSub(leftHandSide, rightHandSide);
+                        break;
+                    case BinOpType::MUL:
+                        result = Builder->CreateFMul(leftHandSide, rightHandSide);
+                        break;
+                    default:
+                        llvm::errs() << "DEBUG: Error unknown operation between expression" << '\n'; 
+                        break;
+                }
+            }
+
+            else {
+                llvm::errs() << "Erorr: Invalid operand type for expression \n";
             }
         }
     };
