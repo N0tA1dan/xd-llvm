@@ -236,6 +236,9 @@ void Parser::TryEat(TokenType token){
             case TokenType::CLOSE_BRACKET:
                 std::cerr << "Error, expected '}'" << std::endl;
                 break;
+            case TokenType::SEMI:
+                std::cerr << "Error, expected ';'" << std::endl;
+                break;
         }
         exit(EXIT_FAILURE);
     }

@@ -37,10 +37,7 @@ std::map<std::string, llvm::AllocaInst*> NamedValues;
 // holds the current function pointer globally to know where to insert variables and other stuff. 
 llvm::Function * CurrentFunc = nullptr;
 
-// holds current variable type globally
-llvm::Type * VarType = nullptr;
 // for doing alloc stuff in functions. like %stack = alloca i32
-// had to modify to accept llvm::Type because the kaleidoscope tutorial was just treating everything as a double
 static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *TheFunction, llvm::Type * Type,llvm::StringRef VarName) {
     // Check if the function is valid before accessing its members
     if (!TheFunction) return nullptr;
@@ -259,8 +256,7 @@ void Generator::GenStmt(StmtNode * stmt){
                          Builder->CreateStore(InitialValue, Alloc);
                     } else {
                         // Handle case where InitialValue is null (e.g., if there was an error in GenExpr)
-                        llvm::errs() << "ERROR: Failed to generate IR for initializer expression of variable: " 
-                                     << LetStmt->identifier.value.value() << "\n";
+                        llvm::errs() << "ERROR: Failed to generate IR for initializer expression of variable: " << LetStmt->identifier.value.value() << "\n";
                     }
                 }
                 
