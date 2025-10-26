@@ -12,6 +12,33 @@ Token Parser::eat(){
     return m_tokens.at(m_index++);
 }
 
+void Parser::TryEat(TokenType token){
+    if(peek().has_value() && peek().value().type == token){
+        eat();
+    } else{
+        switch(token){
+            case TokenType::OPEN_PAREN:
+                std::cerr << "Error, expected '('" << std::endl;
+                break;
+            case TokenType::CLOSE_PAREN:
+                std::cerr << "Error, expected ')'" << std::endl;
+                break;
+            case TokenType::OPEN_BRACKET:
+                std::cerr << "Error, expected '{'" << std::endl;
+                break;
+            case TokenType::CLOSE_BRACKET:
+                std::cerr << "Error, expected '}'" << std::endl;
+                break;
+            case TokenType::SEMI:
+                std::cerr << "Error, expected ';'" << std::endl;
+                break;
+            case TokenType::EQUAL:
+                std::cerr << "Error, exptected '='" << std::endl;
+                break;
+        }
+        exit(EXIT_FAILURE);
+    }
+}
 
 PrimaryExprNode * Parser::ParsePrimaryExpr(){
     PrimaryExprNode * primaryexpr = new PrimaryExprNode;
@@ -219,31 +246,6 @@ ExprNode * Parser::ParseExpr(){
 
 }
 
-void Parser::TryEat(TokenType token){
-    if(peek().has_value() && peek().value().type == token){
-        eat();
-    } else{
-        switch(token){
-            case TokenType::OPEN_PAREN:
-                std::cerr << "Error, expected '('" << std::endl;
-                break;
-            case TokenType::CLOSE_PAREN:
-                std::cerr << "Error, expected ')'" << std::endl;
-                break;
-            case TokenType::OPEN_BRACKET:
-                std::cerr << "Error, expected '{'" << std::endl;
-                break;
-            case TokenType::CLOSE_BRACKET:
-                std::cerr << "Error, expected '}'" << std::endl;
-                break;
-            case TokenType::SEMI:
-                std::cerr << "Error, expected ';'" << std::endl;
-                break;
-        }
-        exit(EXIT_FAILURE);
-    }
-}
-
 ProtoTypeNode * Parser::ParseProto(){
     auto proto = new ProtoTypeNode;
     proto->returnType= eat(); // eat return type
@@ -296,8 +298,29 @@ LetStmtNode * Parser::ParseLetStmt(){
 
 }
 
+AssignmentNode * Parser::ParseAssignmentStmt(){
+    AssignmentNode * assignment = new AssignmentNode;
+
+    assignment->identifier = eat(); // eats identifier 
+
+    TryEat(TokenType::EQUAL);
+
+    assignment->expression = ParseExpr();
+
+    TryEat(TokenType::SEMI);
+
+    return assignment;
+}
+
 StmtNode * Parser::ParseStmt(){
     auto stmt = new StmtNode;
+
+    auto current = peek();
+    if (!current.has_value()) {
+        std::cerr << "Error: unexpected end of input while parsing statement" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
 
     // handles functions
     if(peek().value().type == TokenType::FN){
@@ -321,6 +344,31 @@ StmtNode * Parser::ParseStmt(){
         }
         stmt->var = letstmt;
     }
+
+    else if (peek().value().type == TokenType::IDENT) {
+
+        auto next = peek(1);
+
+        if (next.has_value() == false) {
+            std::cerr << "Error: unexpected end of input after identifier" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        // assigment statement
+        if (next->type == TokenType::EQUAL) {
+            AssignmentNode * assignment = ParseAssignmentStmt();
+            if (!assignment) {
+                std::cerr << "error parsing assignment" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            stmt->var = assignment;
+        }
+
+        // function call
+        else if (next->type == TokenType::OPEN_PAREN) {
+        }
+    }
+
     return stmt;
 }
 

@@ -217,9 +217,6 @@ void Generator::GenStmt(StmtNode * stmt){
             if (CurrentFunc == nullptr) {
                 // Global Variable Declaration
                 
-                // For now, we only handle uninitialized or zero-initialized globals.
-                // TODO: Implement expression generation to handle initializer (LetStmt->initializer)
-                
                 llvm::Constant * Initializer = nullptr;
                 if (VarType->isIntegerTy()) {
                     // Default to 0 for integers
@@ -329,6 +326,35 @@ void Generator::GenStmt(StmtNode * stmt){
             // Clear CurrentFunc after function generation completes
             CurrentFunc = nullptr;
         }
+
+        void operator()(AssignmentNode * assignment){
+            
+            // inside a function
+            if(CurrentFunc != nullptr){
+                
+                
+                if(NamedValues.find(assignment->identifier.value.value()) == NamedValues.end()){
+                    llvm::errs() << "ERROR: Variable is unitialized" << '\n';
+                    exit(EXIT_FAILURE);
+                }
+                
+                llvm::Value * newValue = generator.GenExpr(assignment->expression);
+                llvm::Value * ptrToVariable = NamedValues.at(assignment->identifier.value.value());
+
+                if(newValue){
+                    Builder->CreateStore(newValue, ptrToVariable);
+                } else {
+                    llvm::errs() << "ERROR: Unexpected error generating expression for assignment operation" << '\n';
+                }
+
+            }
+
+            // within global scope
+            else if(CurrentFunc == nullptr){
+
+            }
+        }
+
     };
 
 

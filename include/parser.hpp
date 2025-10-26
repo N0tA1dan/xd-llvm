@@ -60,13 +60,18 @@ struct LetStmtNode{
     ExprNode * expression;
 };
 
+struct AssignmentNode{
+
+    Token identifier;
+    ExprNode* expression;
+};
 
 struct ReturnNode{
     std::optional<std::variant<ExprNode*, IdentNode*>> retval;
 };
 
 struct StmtNode{
-    std::variant<LetStmtNode*, FunctionNode*> var;
+    std::variant<LetStmtNode*, FunctionNode*, AssignmentNode*> var;
 };
 
 
@@ -85,8 +90,8 @@ class Parser{
         void TryEat(TokenType token);
 
     public:
-        Parser(std::vector<Token> tokens) : m_tokens(tokens) {}
 
+        Parser(std::vector<Token> tokens) : m_tokens(tokens) {}
 
         PrimaryExprNode * ParsePrimaryExpr();
         ExprNode * ParseFactor();
@@ -95,6 +100,7 @@ class Parser{
         ProtoTypeNode * ParseProto();
         FunctionNode * ParseFunc();
         LetStmtNode * ParseLetStmt();
+        AssignmentNode * ParseAssignmentStmt();
         StmtNode * ParseStmt();
         ProgNode * Parse();
 };
