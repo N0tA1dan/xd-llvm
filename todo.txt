@@ -9,3 +9,5 @@ x 2025-10-15 update parser to successfully parse parenthesis. example: (10-5)+2
 2025-10-22 update expresssion generation for binary operations
 
 2025-10-24 Allow for integers and floats to be compatible with binary operations
+
+2025-10-27 add if statements
