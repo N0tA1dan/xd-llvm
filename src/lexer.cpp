@@ -106,8 +106,27 @@ std::vector<Token> Lexer::lex(){
                 case '=':
                     if(peek(1).value() == '='){
                         type = TokenType::EQUAL_TO;
+                        eat();
                     } else{
                         type = TokenType::EQUAL;
+                    }
+                    break;
+
+                case '>':
+                    if(peek(1).value() == '='){
+                        type = TokenType::GREATER_OR_EQUAL;
+                        eat();
+                    }else{
+                        type = TokenType::GREATER_THAN;
+                    }
+                    break;
+
+                case '<':
+                    if(peek(1).value() == '='){
+                        type = TokenType::LESS_OR_EQUAL;
+                        eat();
+                    }else{
+                        type = TokenType::LESS_THAN;
                     }
                     break;
                 

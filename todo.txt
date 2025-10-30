@@ -11,3 +11,7 @@ x 2025-10-15 update parser to successfully parse parenthesis. example: (10-5)+2
 2025-10-24 Allow for integers and floats to be compatible with binary operations
 
 2025-10-27 add if statements
+
+2025-10-27 please fix ParseTerm() and ParseFactor() in parser.cpp. Completely useless code in there
+
+2025-10-27 add a print_token() function to the lexer.

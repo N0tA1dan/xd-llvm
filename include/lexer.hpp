@@ -35,6 +35,11 @@ enum class TokenType{
     MUL_EQ,
     DIV_EQ,
     EQUAL_TO,
+    NOT_EQUAL,
+    LESS_THAN,
+    GREATER_THAN,
+    LESS_OR_EQUAL,
+    GREATER_OR_EQUAL,
     RETURN,
 };
 

@@ -12,6 +12,15 @@ enum class BinOpType{
     DIV
 };
 
+enum class ConditionalOpType{
+    EQUAL_TO,
+    NOT_EQUAL,
+    LESS_THAN,
+    GREATER_THAN,
+    LESS_OR_EQUAL,
+    GREATER_OR_EQUAL
+};
+
 struct IntLitNode{
     Token val;
 };
@@ -36,10 +45,18 @@ struct BinOpExpr{
     ExprNode * rhs;
 };
 
-struct ExprNode{
-    std::variant<PrimaryExprNode*, BinOpExpr*> var;
+struct ConditionalOpExpr{
+    ConditionalOpType type;
+    ExprNode * lhs;
+    ExprNode * rhs;
 };
 
+
+struct ExprNode{
+    std::variant<PrimaryExprNode*, BinOpExpr*, ConditionalOpExpr*> var;
+};
+
+// forward decleration
 struct StmtNode;
 
 struct ProtoTypeNode{
@@ -66,12 +83,18 @@ struct AssignmentNode{
     ExprNode* expression;
 };
 
+
+struct IfStmtNode{
+   ExprNode * condition; 
+   std::vector<StmtNode*> stmts;
+};
+
 struct ReturnNode{
     std::optional<std::variant<ExprNode*, IdentNode*>> retval;
 };
 
 struct StmtNode{
-    std::variant<LetStmtNode*, FunctionNode*, AssignmentNode*> var;
+    std::variant<LetStmtNode*, FunctionNode*, AssignmentNode*, IfStmtNode*> var;
 };
 
 
@@ -97,10 +120,13 @@ class Parser{
         ExprNode * ParseFactor();
         ExprNode * ParseTerm();
         ExprNode * ParseExpr();
+        ExprNode * ParseComparison();
+        ExprNode * ParseEquality();
         ProtoTypeNode * ParseProto();
         FunctionNode * ParseFunc();
         LetStmtNode * ParseLetStmt();
         AssignmentNode * ParseAssignmentStmt();
+        IfStmtNode * ParseIfStmt();
         StmtNode * ParseStmt();
         ProgNode * Parse();
 };

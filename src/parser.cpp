@@ -239,9 +239,136 @@ ExprNode * Parser::ParseTerm(){
     return lhsexpr;
 }
 
+ExprNode * Parser::ParseComparison(){
+    auto lhs = ParseTerm();
+
+    if(!lhs){
+        std::cerr << "Erorr parsing term in parse comparison" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    ExprNode * lhsExpr = new ExprNode;
+    lhsExpr = lhs;
+
+
+    bool isConditional = false;
+
+    while(peek().has_value()){
+        ConditionalOpType opType;
+
+        switch(peek().value().type){
+            case TokenType::LESS_THAN:
+                opType = ConditionalOpType::LESS_THAN;
+                isConditional = true;
+                eat();
+                break;
+
+            case TokenType::GREATER_THAN:
+                opType = ConditionalOpType::GREATER_THAN;
+                isConditional = true;
+                eat();
+                break;
+
+            case TokenType::LESS_OR_EQUAL:
+                opType = ConditionalOpType::LESS_OR_EQUAL;
+                isConditional = true;
+                eat();
+                break;
+
+            case TokenType::GREATER_OR_EQUAL:
+                opType = ConditionalOpType::GREATER_OR_EQUAL;
+                isConditional = true;
+                eat();
+                break;
+
+            default:
+                isConditional = false;
+                break;
+        }
+
+        if(isConditional == true){
+            
+            ExprNode * rhsExpr = ParseTerm(); 
+
+            ConditionalOpExpr * conditionalOp = new ConditionalOpExpr;
+
+            conditionalOp->type = opType;
+            conditionalOp->lhs= lhsExpr;
+            conditionalOp->rhs= rhsExpr;
+
+            ExprNode * newExpr = new ExprNode;
+            newExpr->var = conditionalOp;
+            lhsExpr = newExpr;
+            
+        }
+
+        if(isConditional == false) break;
+
+    }
+
+    return lhsExpr;
+}
+
+ExprNode * Parser::ParseEquality(){
+    auto lhs = ParseComparison();
+
+    if(!lhs){
+        std::cerr << "Erorr parsing term in parse comparison" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    ExprNode * lhsExpr = new ExprNode;
+    lhsExpr = lhs;
+
+
+    bool isConditional = false;
+
+    while(peek().has_value()){
+        ConditionalOpType opType;
+
+        switch(peek().value().type){
+            case TokenType::EQUAL_TO:
+                opType = ConditionalOpType::EQUAL_TO;
+                isConditional = true;
+                eat();
+                break;
+
+            case TokenType::NOT_EQUAL:
+                opType = ConditionalOpType::NOT_EQUAL;
+                isConditional = true;
+                eat();
+                break;
+
+            default:
+                isConditional = false;
+                break;
+        }
+
+        if(isConditional == true){
+            
+            ExprNode * rhsExpr = ParseComparison(); 
+
+            ConditionalOpExpr * conditionalOp = new ConditionalOpExpr;
+
+            conditionalOp->type = opType;
+            conditionalOp->lhs= lhsExpr;
+            conditionalOp->rhs= rhsExpr;
+
+            ExprNode * newExpr = new ExprNode;
+            newExpr->var = conditionalOp;
+            lhsExpr = newExpr;
+            
+        }
+
+        if(isConditional == false) break;
+    }
+
+    return lhsExpr;
+}
+
 
 ExprNode * Parser::ParseExpr(){
-    ExprNode * expr = ParseTerm();
+    ExprNode * expr = ParseEquality();
     return expr;
 
 }
@@ -298,6 +425,7 @@ LetStmtNode * Parser::ParseLetStmt(){
 
 }
 
+
 AssignmentNode * Parser::ParseAssignmentStmt(){
     AssignmentNode * assignment = new AssignmentNode;
 
@@ -310,6 +438,29 @@ AssignmentNode * Parser::ParseAssignmentStmt(){
     TryEat(TokenType::SEMI);
 
     return assignment;
+}
+
+IfStmtNode * Parser::ParseIfStmt(){
+
+    IfStmtNode * ifStmt = new IfStmtNode;
+
+    TryEat(TokenType::OPEN_PAREN);  
+
+    ifStmt->condition= ParseExpr();
+
+    TryEat(TokenType::CLOSE_PAREN);
+
+    TryEat(TokenType::OPEN_BRACKET);
+
+    while(peek().has_value() && peek().value().type != TokenType::CLOSE_BRACKET){
+        ifStmt->stmts.push_back(ParseStmt());
+
+    }
+
+    TryEat(TokenType::CLOSE_BRACKET);
+    return ifStmt;
+
+
 }
 
 StmtNode * Parser::ParseStmt(){
@@ -345,6 +496,7 @@ StmtNode * Parser::ParseStmt(){
         stmt->var = letstmt;
     }
 
+
     else if (peek().value().type == TokenType::IDENT) {
 
         auto next = peek(1);
@@ -367,6 +519,17 @@ StmtNode * Parser::ParseStmt(){
         // function call
         else if (next->type == TokenType::OPEN_PAREN) {
         }
+    }
+
+    else if(peek().value().type == TokenType::IF){
+        eat(); // eats if token
+        IfStmtNode * ifStmt= ParseIfStmt();
+
+        if(!ifStmt){
+            std::cerr << "Error parsing if statement" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        stmt->var = ifStmt;
     }
 
     return stmt;

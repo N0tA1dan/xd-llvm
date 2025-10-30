@@ -197,6 +197,20 @@ llvm::Value* Generator::GenExpr(ExprNode * expr){
                 llvm::errs() << "Erorr: Invalid operand type for expression \n";
             }
         }
+
+        void operator()(ConditionalOpExpr* conditionalExpr){
+            llvm::Value * leftHandSide = generator.GenExpr(conditionalExpr->lhs);
+            llvm::Value * rightHandSide = generator.GenExpr(conditionalExpr->rhs);
+
+            switch(conditionalExpr->type){
+                case ConditionalOpType::EQUAL_TO:
+                    result = Builder->CreateICmpEQ(leftHandSide, rightHandSide);
+                    break;
+
+                default:
+                    llvm::errs() << "ERROR: Unknown condition within if statement" << '\n';
+            }
+        }
     };
 
     ExprVisitor visitor = {*this};
@@ -208,6 +222,7 @@ void Generator::GenStmt(StmtNode * stmt){
     struct StmtVisitor{
         Generator & generator;
         
+        // handles let statements
         void operator()(LetStmtNode * LetStmt){
             // Fixed the call: The helper is a member of Generator, not the StmtVisitor.
             llvm::Type * VarType = generator.GetTypeFromToken(LetStmt->type.type);
@@ -262,6 +277,7 @@ void Generator::GenStmt(StmtNode * stmt){
             }
         }
 
+        // handles function generation
         void operator()(FunctionNode * Function){
 
             llvm::Type* ReturnType = generator.GetTypeFromToken(Function->prototype->returnType.type);
@@ -314,6 +330,7 @@ void Generator::GenStmt(StmtNode * stmt){
                 generator.GenStmt(stmt);
             }
 
+            // generate return stmt
             if (!Builder->GetInsertBlock()->getTerminator()) {
                 if (ReturnType->isVoidTy()) {
                     Builder->CreateRetVoid();
@@ -327,6 +344,7 @@ void Generator::GenStmt(StmtNode * stmt){
             CurrentFunc = nullptr;
         }
 
+        // handles reassignment
         void operator()(AssignmentNode * assignment){
             
             // inside a function
@@ -353,6 +371,18 @@ void Generator::GenStmt(StmtNode * stmt){
             else if(CurrentFunc == nullptr){
 
             }
+        }
+
+        // handles if statements
+        void operator()(IfStmtNode* ifStmt){
+            if(CurrentFunc == nullptr){
+                llvm::errs() << "ERROR: If statement must be contained within a function" << '\n';
+                exit(EXIT_FAILURE);
+            }
+
+            llvm::Value * condition = generator.GenExpr(ifStmt->condition);
+
+
         }
 
     };
