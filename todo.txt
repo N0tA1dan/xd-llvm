@@ -15,3 +15,5 @@ x 2025-10-15 update parser to successfully parse parenthesis. example: (10-5)+2
 2025-10-27 please fix ParseTerm() and ParseFactor() in parser.cpp. Completely useless code in there
 
 2025-10-27 add a print_token() function to the lexer.
+
+2026-01-09 add division for binary operations in the generator

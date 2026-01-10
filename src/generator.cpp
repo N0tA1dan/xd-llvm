@@ -157,6 +157,7 @@ llvm::Value* Generator::GenExpr(ExprNode * expr){
             // creates operations specifically for integer types
             if(leftType->isIntegerTy() == true && rightType->isIntegerTy() == true){
                 switch(binExpr->type){
+
                     case BinOpType::ADD:
                         result = Builder->CreateAdd(leftHandSide, rightHandSide);
                         break;
@@ -164,13 +165,21 @@ llvm::Value* Generator::GenExpr(ExprNode * expr){
                     case BinOpType::SUB:
                         result = Builder->CreateSub(leftHandSide, rightHandSide);
                         break;
+
                     case BinOpType::MUL:
                         result = Builder->CreateMul(leftHandSide, rightHandSide);
                         break;
+
+                    case BinOpType::DIV:
+                        result = Builder->CreateSDiv(leftHandSide, rightHandSide);
+                        break;
+
                     default:
                         llvm::errs() << "DEBUG: Error unknown operation between expression" << '\n'; 
                         break;
                 }
+
+                return;
             }
 
             // use floating point llvm instructions instead
@@ -184,18 +193,26 @@ llvm::Value* Generator::GenExpr(ExprNode * expr){
                     case BinOpType::SUB:
                         result = Builder->CreateFSub(leftHandSide, rightHandSide);
                         break;
+
                     case BinOpType::MUL:
                         result = Builder->CreateFMul(leftHandSide, rightHandSide);
                         break;
+
+                    case BinOpType::DIV:
+                        result = Builder->CreateSDiv(leftHandSide, rightHandSide);
+                        break;
+
                     default:
                         llvm::errs() << "DEBUG: Error unknown operation between expression" << '\n'; 
                         break;
                 }
+
+                return;
             }
 
-            else {
-                llvm::errs() << "Erorr: Invalid operand type for expression \n";
-            }
+            llvm::errs() << "ERROR: Invalid operand types for binary expression. LHS="
+                 << *leftType << " RHS=" << *rightType << "\n";
+            result = nullptr;
         }
 
         void operator()(ConditionalOpExpr* conditionalExpr){

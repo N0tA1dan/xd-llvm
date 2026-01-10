@@ -78,6 +78,10 @@ void print_tokens(const std::vector<Token> & tokens){
             case TokenType::EQUAL_TO:
                 std::cout << "EQUAL_TO TOKEN" << std::endl;
                 break;
+
+            case TokenType::ADD:
+                std::cout << "ADD TOKEN" << std::endl;
+                break;
         }
     }
 }

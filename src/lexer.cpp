@@ -103,6 +103,15 @@ std::vector<Token> Lexer::lex(){
                     }
                     break;
 
+                case '/':
+                    if(peek(1).value() == '/') {
+                        type = TokenType::DIV_EQ;
+                        eat();
+                    } else{
+                        type = TokenType::DIV;
+                    }
+                    break;
+
                 case '=':
                     if(peek(1).value() == '='){
                         type = TokenType::EQUAL_TO;
