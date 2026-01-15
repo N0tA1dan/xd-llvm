@@ -16,4 +16,8 @@ x 2025-10-15 update parser to successfully parse parenthesis. example: (10-5)+2
 
 2025-10-27 add a print_token() function to the lexer.
 
-2026-01-09 add division for binary operations in the generator
+x 2026-01-09 add division for binary operations in the generator
+
+2026-01-12 generate the statements in the IF condition branch
+
+2025-01-14 make conditional expressions in generator accept multiple types (only int comparisson allowed)

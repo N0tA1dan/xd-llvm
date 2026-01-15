@@ -199,7 +199,7 @@ llvm::Value* Generator::GenExpr(ExprNode * expr){
                         break;
 
                     case BinOpType::DIV:
-                        result = Builder->CreateSDiv(leftHandSide, rightHandSide);
+                        result = Builder->CreateFDiv(leftHandSide, rightHandSide);
                         break;
 
                     default:
@@ -219,14 +219,7 @@ llvm::Value* Generator::GenExpr(ExprNode * expr){
             llvm::Value * leftHandSide = generator.GenExpr(conditionalExpr->lhs);
             llvm::Value * rightHandSide = generator.GenExpr(conditionalExpr->rhs);
 
-            switch(conditionalExpr->type){
-                case ConditionalOpType::EQUAL_TO:
-                    result = Builder->CreateICmpEQ(leftHandSide, rightHandSide);
-                    break;
-
-                default:
-                    llvm::errs() << "ERROR: Unknown condition within if statement" << '\n';
-            }
+            result = Builder->CreateICmpEQ(leftHandSide, rightHandSide);
         }
     };
 
@@ -397,11 +390,38 @@ void Generator::GenStmt(StmtNode * stmt){
                 exit(EXIT_FAILURE);
             }
 
-            llvm::Value * condition = generator.GenExpr(ifStmt->condition);
+            auto condition = generator.GenExpr(ifStmt->condition);
 
+            llvm::BasicBlock* thenBB = llvm::BasicBlock::Create(*TheContext, "then", CurrentFunc);
+            llvm::BasicBlock* elseBB = llvm::BasicBlock::Create(*TheContext, "else", CurrentFunc);
+            llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(*TheContext, "merge", CurrentFunc);
+
+            Builder->CreateCondBr(condition, thenBB, elseBB);
+            Builder->SetInsertPoint(thenBB);
+
+            // Generate the if statment body
+            for (auto stmt : ifStmt->thenBody) {
+                generator.GenStmt(stmt);
+            }
+            if (!Builder->GetInsertBlock()->getTerminator()) {
+                Builder->CreateBr(mergeBB);
+            }
+
+            // If there is an else branch, generate the code
+            Builder->SetInsertPoint(elseBB);
+            if (!ifStmt->elseBody.empty()) {
+                for (auto stmt : ifStmt->elseBody) {
+                    generator.GenStmt(stmt);
+                }
+            }
+            if (!Builder->GetInsertBlock()->getTerminator()) {
+                Builder->CreateBr(mergeBB);
+            }
+
+            // continue generation in merge branch
+            Builder->SetInsertPoint(mergeBB);
 
         }
-
     };
 
 

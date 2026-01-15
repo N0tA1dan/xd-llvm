@@ -55,6 +55,14 @@ void print_tokens(const std::vector<Token> & tokens){
                 std::cout << "FN TOKEN" << std::endl;
                 break;
 
+            case TokenType::IF:
+                std::cout << "IF TOKEN" << std::endl;
+                break;
+            
+            case TokenType::ELSE:
+                std::cout << "ELSE TOKEN" << std::endl;
+                break;
+
             case TokenType::OPEN_PAREN:
                 std::cout << "OPEN_PAREN TOKEN" << std::endl;
                 break;
@@ -98,6 +106,8 @@ int main(int argc, char * argv[]){
 
     Parser parser(tokens);
     auto prog = parser.Parse();
+
+    std::cout << "finished parsing" << std::endl;
 
     Generator generator(prog);
     

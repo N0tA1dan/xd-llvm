@@ -108,7 +108,6 @@ ExprNode * Parser::ParseFactor(){
 
         switch(peek().value().type){
 
-            // left off here
             case TokenType::MUL:
                 {
                     isBinExpr = true;
@@ -174,8 +173,7 @@ ExprNode * Parser::ParseTerm(){
         exit(EXIT_FAILURE);
     } 
 
-    ExprNode * lhsexpr = new ExprNode;
-    lhsexpr = lhs;
+    ExprNode * lhsexpr = lhs;
 
     bool isBinExpr = false;
     
@@ -247,8 +245,7 @@ ExprNode * Parser::ParseComparison(){
         exit(EXIT_FAILURE);
     }
 
-    ExprNode * lhsExpr = new ExprNode;
-    lhsExpr = lhs;
+    ExprNode * lhsExpr = lhs;
 
 
     bool isConditional = false;
@@ -317,8 +314,7 @@ ExprNode * Parser::ParseEquality(){
         exit(EXIT_FAILURE);
     }
 
-    ExprNode * lhsExpr = new ExprNode;
-    lhsExpr = lhs;
+    ExprNode * lhsExpr = lhs;
 
 
     bool isConditional = false;
@@ -446,20 +442,33 @@ IfStmtNode * Parser::ParseIfStmt(){
 
     TryEat(TokenType::OPEN_PAREN);  
 
-    ifStmt->condition= ParseExpr();
+    ifStmt->condition = ParseExpr();
 
     TryEat(TokenType::CLOSE_PAREN);
 
     TryEat(TokenType::OPEN_BRACKET);
 
+    // parse if statement body statements
     while(peek().has_value() && peek().value().type != TokenType::CLOSE_BRACKET){
-        ifStmt->stmts.push_back(ParseStmt());
+        ifStmt->thenBody.push_back(ParseStmt());
 
     }
 
     TryEat(TokenType::CLOSE_BRACKET);
-    return ifStmt;
 
+    // parse else body
+    if(peek().has_value() && peek().value().type == TokenType::ELSE){
+        TryEat(TokenType::ELSE);
+        TryEat(TokenType::OPEN_BRACKET);
+        while(peek().has_value() && peek().value().type != TokenType::CLOSE_BRACKET){
+
+            ifStmt->elseBody.push_back(ParseStmt());
+        }
+        TryEat(TokenType::CLOSE_BRACKET);
+    }
+    
+
+    return ifStmt;
 
 }
 

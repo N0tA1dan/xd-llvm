@@ -86,7 +86,8 @@ struct AssignmentNode{
 
 struct IfStmtNode{
    ExprNode * condition; 
-   std::vector<StmtNode*> stmts;
+   std::vector<StmtNode*> thenBody;
+   std::vector<StmtNode*> elseBody;
 };
 
 struct ReturnNode{
