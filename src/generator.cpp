@@ -30,16 +30,13 @@ std::unique_ptr<llvm::Module> TheModule;
 
 // stores global variables declared outside functions.
 std::map<std::string, llvm::Value *> GlobalValues;
-
 // stores local variables inside functions. Gets cleared after every generation of a function
 std::map<std::string, llvm::AllocaInst*> NamedValues;
-
 // holds the current function pointer globally to know where to insert variables and other stuff. 
 llvm::Function * CurrentFunc = nullptr;
 
 // for doing alloc stuff in functions. like %stack = alloca i32
 static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *TheFunction, llvm::Type * Type,llvm::StringRef VarName) {
-    // Check if the function is valid before accessing its members
     if (!TheFunction) return nullptr;
     
     llvm::IRBuilder<> TmpB(&TheFunction->getEntryBlock(), TheFunction->getEntryBlock().begin());
@@ -219,7 +216,36 @@ llvm::Value* Generator::GenExpr(ExprNode * expr){
             llvm::Value * leftHandSide = generator.GenExpr(conditionalExpr->lhs);
             llvm::Value * rightHandSide = generator.GenExpr(conditionalExpr->rhs);
 
-            result = Builder->CreateICmpEQ(leftHandSide, rightHandSide);
+            llvm::Type * leftType = leftHandSide->getType();
+            llvm::Type * rightType = rightHandSide->getType();
+
+            if(leftType->isIntegerTy() && rightType->isIntegerTy()){
+                switch(conditionalExpr->type){
+                    case ConditionalOpType::EQUAL_TO:
+                        result = Builder->CreateICmpEQ(leftHandSide, rightHandSide);
+                        break;
+
+                    case ConditionalOpType::NOT_EQUAL:
+                        result = Builder->CreateICmpNE(leftHandSide, rightHandSide);
+                        break;
+                }
+            }
+
+            if(leftType->isFloatingPointTy() && rightType->isFloatingPointTy()){
+                switch(conditionalExpr->type){
+                    case ConditionalOpType::EQUAL_TO:
+                        result = Builder->CreateFCmpOEQ(leftHandSide, rightHandSide);
+                        break;
+
+                    case ConditionalOpType::NOT_EQUAL:
+                        result = Builder->CreateFCmpONE(leftHandSide, rightHandSide);
+                        break;
+                }
+            }
+
+            else{
+                llvm::errs() << "Error Comparrison between expressions failed, type mismatch" << '\n';
+            }
         }
     };
 
@@ -233,9 +259,9 @@ void Generator::GenStmt(StmtNode * stmt){
         Generator & generator;
         
         // handles let statements
-        void operator()(LetStmtNode * LetStmt){
+        void operator()(DeclerationStmtNode* decleration){
             // Fixed the call: The helper is a member of Generator, not the StmtVisitor.
-            llvm::Type * VarType = generator.GetTypeFromToken(LetStmt->type.type);
+            llvm::Type * VarType = generator.GetTypeFromToken(decleration->type.type);
             if (!VarType) return; // Error handling for unknown type
 
             // Handle Global vs Local Declarations
@@ -260,29 +286,32 @@ void Generator::GenStmt(StmtNode * stmt){
                     false,      // isConstant (Mutable)
                     llvm::GlobalValue::ExternalLinkage, // Linkage type
                     Initializer, // Initializer
-                    LetStmt->identifier.value.value() // Name
+                    decleration->identifier.value.value() // Name
                 );
                 
-                GlobalValues[LetStmt->identifier.value.value()] = GlobalVar;
+                GlobalValues[decleration->identifier.value.value()] = GlobalVar;
                 return;
 
             } else {
                 // Local Variable Declaration (inside a function)
-                llvm::AllocaInst* Alloc = CreateEntryBlockAlloca(CurrentFunc, VarType, LetStmt->identifier.value.value());
+                llvm::AllocaInst* Alloc = CreateEntryBlockAlloca(CurrentFunc, VarType, decleration->identifier.value.value());
                 
                 if (VarType->isIntegerTy(32) || VarType->isFloatTy()) {
                     // This section now needs to call GenExpr
-                    llvm::Value* InitialValue = generator.GenExpr(LetStmt->expression);
-                    
-                    if (InitialValue) {
-                         Builder->CreateStore(InitialValue, Alloc);
-                    } else {
-                        // Handle case where InitialValue is null (e.g., if there was an error in GenExpr)
-                        llvm::errs() << "ERROR: Failed to generate IR for initializer expression of variable: " << LetStmt->identifier.value.value() << "\n";
+
+                    if(decleration->expression.has_value()){
+
+                        llvm::Value* InitialValue = generator.GenExpr(decleration->expression.value());
+                        if (InitialValue) { Builder->CreateStore(InitialValue, Alloc);
+                        } else {
+                            // Handle case where InitialValue is null (e.g., if there was an error in GenExpr)
+                            llvm::errs() << "ERROR: Failed to generate IR for initializer expression of variable: " << decleration->identifier.value.value() << "\n";
+                        }
                     }
+                    
                 }
                 
-                NamedValues[LetStmt->identifier.value.value()] = Alloc;
+                NamedValues[decleration->identifier.value.value()] = Alloc;
                 return;
             }
         }

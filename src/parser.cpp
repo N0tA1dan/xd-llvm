@@ -411,9 +411,11 @@ LetStmtNode * Parser::ParseLetStmt(){
 
     letstmt->identifier = eat();
 
-    TryEat(TokenType::EQUAL);
 
-    letstmt->expression = ParseExpr();
+    if(peek().has_value() && peek().value().type == TokenType::EQUAL){
+        TryEat(TokenType::EQUAL);
+        letstmt->expression = ParseExpr();
+    }
 
     TryEat(TokenType::SEMI);
 
@@ -421,6 +423,24 @@ LetStmtNode * Parser::ParseLetStmt(){
 
 }
 
+DeclerationStmtNode * Parser::ParseDecleration(){
+    DeclerationStmtNode* decleration = new DeclerationStmtNode;
+
+    decleration->type = eat();
+
+    decleration->identifier = eat();
+
+
+    if(peek().has_value() && peek().value().type == TokenType::EQUAL){
+        TryEat(TokenType::EQUAL);
+        decleration->expression = ParseExpr();
+    }
+
+    TryEat(TokenType::SEMI);
+
+    return decleration;
+
+}
 
 AssignmentNode * Parser::ParseAssignmentStmt(){
     AssignmentNode * assignment = new AssignmentNode;
@@ -494,15 +514,15 @@ StmtNode * Parser::ParseStmt(){
         
     }
 
-    else if(peek().value().type == TokenType::LET){
-        eat(); // eats let token
-        LetStmtNode * letstmt = ParseLetStmt();
+    else if(peek().value().type == TokenType::INT || peek().value().type == TokenType::FLOAT){
 
-        if(!letstmt){
+        DeclerationStmtNode* decleration = ParseDecleration();
+
+        if(!decleration){
             std::cerr << "error parsing let statement" << std::endl;
             exit(EXIT_FAILURE);
         }
-        stmt->var = letstmt;
+        stmt->var = decleration;
     }
 
 

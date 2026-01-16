@@ -10,7 +10,7 @@ x 2025-10-15 update parser to successfully parse parenthesis. example: (10-5)+2
 
 2025-10-24 Allow for integers and floats to be compatible with binary operations
 
-2025-10-27 add if statements
+x 2025-10-27 add if statements
 
 2025-10-27 please fix ParseTerm() and ParseFactor() in parser.cpp. Completely useless code in there
 
@@ -18,6 +18,6 @@ x 2025-10-15 update parser to successfully parse parenthesis. example: (10-5)+2
 
 x 2026-01-09 add division for binary operations in the generator
 
-2026-01-12 generate the statements in the IF condition branch
+x 2026-01-12 generate the statements in the IF condition branch
 
-2025-01-14 make conditional expressions in generator accept multiple types (only int comparisson allowed)
+x 2025-01-14 make conditional expressions in generator accept multiple types (only int comparisson allowed)

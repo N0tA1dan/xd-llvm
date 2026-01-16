@@ -107,8 +107,6 @@ int main(int argc, char * argv[]){
     Parser parser(tokens);
     auto prog = parser.Parse();
 
-    std::cout << "finished parsing" << std::endl;
-
     Generator generator(prog);
     
     generator.Generate();

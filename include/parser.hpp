@@ -71,10 +71,16 @@ struct FunctionNode{
     std::vector<StmtNode*> body;
 };
 
+struct DeclerationStmtNode{
+    Token type;
+    Token identifier;
+    std::optional<ExprNode*> expression;
+};
+
 struct LetStmtNode{
     Token type;
     Token identifier;
-    ExprNode * expression;
+    std::optional<ExprNode*> expression;
 };
 
 struct AssignmentNode{
@@ -95,7 +101,7 @@ struct ReturnNode{
 };
 
 struct StmtNode{
-    std::variant<LetStmtNode*, FunctionNode*, AssignmentNode*, IfStmtNode*> var;
+    std::variant<FunctionNode*, AssignmentNode*, IfStmtNode*, DeclerationStmtNode*> var;
 };
 
 
@@ -128,6 +134,7 @@ class Parser{
         LetStmtNode * ParseLetStmt();
         AssignmentNode * ParseAssignmentStmt();
         IfStmtNode * ParseIfStmt();
+        DeclerationStmtNode* ParseDecleration();
         StmtNode * ParseStmt();
         ProgNode * Parse();
 };

@@ -9,7 +9,6 @@
 
 enum class TokenType{
     EXIT,
-    LET,
     IDENT,
     IF,
     ELSE,
@@ -58,7 +57,6 @@ class Lexer{
 
         std::unordered_map<std::string, TokenType> m_TokenMap = {
             {"exit", TokenType::EXIT},
-            {"let", TokenType::LET},
             {"int", TokenType::INT},
             {"char", TokenType::CHAR},
             {"float", TokenType::FLOAT},
