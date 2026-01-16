@@ -27,7 +27,7 @@ fn int foo(){
 Variables:
 ```
 fn int foo(){
-  let int x = 10;
+  int x = 10;
 }
 ```
 
