@@ -7,10 +7,6 @@
 void print_tokens(const std::vector<Token> & tokens){
     for(auto token : tokens){
         switch(token.type){
-            case TokenType::LET:
-                std::cout << "LET TOKEN" << std::endl;
-                break;
-                
             case TokenType::EXIT:
                 std::cout << "EXIT TOKEN" << std::endl;
 
