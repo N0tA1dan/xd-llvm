@@ -1,6 +1,6 @@
 #include "lexer.hpp"
 
-Lexer::Lexer(std::string code) : m_code(code) {}
+Lexer::Lexer(const std::string& code) : m_code(code) {}
 
 [[nodiscard]] std::optional<char> Lexer::peek(int offset = 0){
     if(m_index + offset >= m_code.length()){

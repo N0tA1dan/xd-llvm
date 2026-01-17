@@ -92,13 +92,20 @@ void print_tokens(const std::vector<Token> & tokens){
 
 int main(int argc, char * argv[]){
 
-    std::ifstream t(argv[1]);
     std::stringstream buffer;
-    buffer << t.rdbuf();
+
+    if(argc >= 2){
+        
+        std::ifstream t(argv[1]);
+        buffer << t.rdbuf();
+    }
+    else if(argc < 2){
+        std::cerr << "Error: No source file provided" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 
     Lexer lex(buffer.str());
     std::vector<Token> tokens = lex.lex();
-    //print_tokens(tokens);
 
     Parser parser(tokens);
     auto prog = parser.Parse();

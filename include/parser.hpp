@@ -77,18 +77,11 @@ struct DeclerationStmtNode{
     std::optional<std::unique_ptr<ExprNode>> expression;
 };
 
-struct LetStmtNode{
-    Token type;
-    Token identifier;
-    std::optional<std::unique_ptr<ExprNode>> expression;
-};
-
 struct AssignmentNode{
 
     Token identifier;
     std::unique_ptr<ExprNode> expression;
 };
-
 
 struct IfStmtNode{
    std::unique_ptr<ExprNode> condition; 
@@ -131,7 +124,6 @@ class Parser{
         std::unique_ptr<ExprNode> ParseEquality();
         std::unique_ptr<ProtoTypeNode> ParseProto();
         std::unique_ptr<FunctionNode> ParseFunc();
-        std::unique_ptr<LetStmtNode> ParseLetStmt();
         std::unique_ptr<AssignmentNode> ParseAssignmentStmt();
         std::unique_ptr<IfStmtNode> ParseIfStmt();
         std::unique_ptr<DeclerationStmtNode> ParseDecleration();

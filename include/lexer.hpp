@@ -81,7 +81,7 @@ class Lexer{
         char eat();
 
     public:
-        Lexer(std::string code);
+        Lexer(const std::string& code);
 
         std::vector<Token> lex();
 
