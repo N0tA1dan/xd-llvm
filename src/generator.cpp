@@ -21,8 +21,6 @@
 #include <vector>
 
 
-Generator::Generator(ProgNode * prog) : m_prog(prog){}
-
 
 std::unique_ptr<llvm::LLVMContext> TheContext;
 std::unique_ptr<llvm::IRBuilder<>> Builder;
@@ -67,26 +65,26 @@ llvm::Type* Generator::GetTypeFromToken(TokenType type) {
     }
 }
 
-llvm::Value* Generator::GenPrimaryExpr(PrimaryExprNode * primaryExpr){
+llvm::Value* Generator::GenPrimaryExpr(const std::unique_ptr<PrimaryExprNode>& primaryExpr){
     struct PrimaryExprVisitor{
         Generator & generator;
         llvm::Value* result = nullptr; // Holds the result of the visit
 
-        void operator()(IntLitNode * intLit){
+        void operator()(const std::unique_ptr<IntLitNode>& intLit){
             
             std::string intValueStr = intLit->val.value.value();
             
             result = Builder->getInt32(std::stoi(intValueStr));
         }
 
-        void operator()(FloatLitNode* floatLit){
+        void operator()(const std::unique_ptr<FloatLitNode>& floatLit){
             
             std::string floatValueStr = floatLit->val.value.value();
             
             result = llvm::ConstantFP::get(llvm::Type::getFloatTy(*TheContext), std::stof(floatValueStr));
         }
 
-        void operator()(IdentNode * ident){
+        void operator()(const std::unique_ptr<IdentNode>& ident){
 
             // global variable generation
             if(CurrentFunc == nullptr){
@@ -110,7 +108,7 @@ llvm::Value* Generator::GenPrimaryExpr(PrimaryExprNode * primaryExpr){
         }
         
         // Handles expressions within parenthesis. Eg: (10*5)
-        void operator()(ExprNode * innerExpr){
+        void operator()(const std::unique_ptr<ExprNode>& innerExpr){
             result = generator.GenExpr(innerExpr);
         }
     };
@@ -120,7 +118,7 @@ llvm::Value* Generator::GenPrimaryExpr(PrimaryExprNode * primaryExpr){
     return visitor.result;
 }
 
-llvm::Value* Generator::GenExpr(ExprNode * expr){
+llvm::Value* Generator::GenExpr(const std::unique_ptr<ExprNode>& expr){
 
     if (!expr) {
         llvm::errs() << "ERROR: GenExpr called with nullptr ExprNode\n";
@@ -132,11 +130,11 @@ llvm::Value* Generator::GenExpr(ExprNode * expr){
         Generator & generator;
         llvm::Value* result = nullptr; 
 
-        void operator()(PrimaryExprNode * primaryExpr){
+        void operator()(const std::unique_ptr<PrimaryExprNode>& primaryExpr){
             result = generator.GenPrimaryExpr(primaryExpr);
         }
 
-        void operator()(BinOpExpr * binExpr){
+        void operator()(const std::unique_ptr<BinOpExpr>& binExpr){
 
             llvm::Value * leftHandSide = generator.GenExpr(binExpr->lhs);
             llvm::Value * rightHandSide = generator.GenExpr(binExpr->rhs);
@@ -212,7 +210,7 @@ llvm::Value* Generator::GenExpr(ExprNode * expr){
             result = nullptr;
         }
 
-        void operator()(ConditionalOpExpr* conditionalExpr){
+        void operator()(const std::unique_ptr<ConditionalOpExpr>& conditionalExpr){
             llvm::Value * leftHandSide = generator.GenExpr(conditionalExpr->lhs);
             llvm::Value * rightHandSide = generator.GenExpr(conditionalExpr->rhs);
 
@@ -254,12 +252,12 @@ llvm::Value* Generator::GenExpr(ExprNode * expr){
     return visitor.result;
 }
 
-void Generator::GenStmt(StmtNode * stmt){
+void Generator::GenStmt(const std::unique_ptr<StmtNode>& stmt){
     struct StmtVisitor{
         Generator & generator;
         
         // handles let statements
-        void operator()(DeclerationStmtNode* decleration){
+        void operator()(const std::unique_ptr<DeclerationStmtNode>& decleration){
             // Fixed the call: The helper is a member of Generator, not the StmtVisitor.
             llvm::Type * VarType = generator.GetTypeFromToken(decleration->type.type);
             if (!VarType) return; // Error handling for unknown type
@@ -317,7 +315,7 @@ void Generator::GenStmt(StmtNode * stmt){
         }
 
         // handles function generation
-        void operator()(FunctionNode * Function){
+        void operator()(const std::unique_ptr<FunctionNode>& Function){
 
             llvm::Type* ReturnType = generator.GetTypeFromToken(Function->prototype->returnType.type);
             
@@ -365,7 +363,7 @@ void Generator::GenStmt(StmtNode * stmt){
 
 
             // generate all statements made in function body
-            for(auto stmt : Function->body){
+            for(const auto& stmt : Function->body){
                 generator.GenStmt(stmt);
             }
 
@@ -384,7 +382,7 @@ void Generator::GenStmt(StmtNode * stmt){
         }
 
         // handles reassignment
-        void operator()(AssignmentNode * assignment){
+        void operator()(const std::unique_ptr<AssignmentNode>& assignment){
             
             // inside a function
             if(CurrentFunc != nullptr){
@@ -413,7 +411,7 @@ void Generator::GenStmt(StmtNode * stmt){
         }
 
         // handles if statements
-        void operator()(IfStmtNode* ifStmt){
+        void operator()(const std::unique_ptr<IfStmtNode>& ifStmt){
             if(CurrentFunc == nullptr){
                 llvm::errs() << "ERROR: If statement must be contained within a function" << '\n';
                 exit(EXIT_FAILURE);
@@ -429,7 +427,7 @@ void Generator::GenStmt(StmtNode * stmt){
             Builder->SetInsertPoint(thenBB);
 
             // Generate the if statment body
-            for (auto stmt : ifStmt->thenBody) {
+            for (const auto& stmt : ifStmt->thenBody) {
                 generator.GenStmt(stmt);
             }
             if (!Builder->GetInsertBlock()->getTerminator()) {
@@ -439,7 +437,7 @@ void Generator::GenStmt(StmtNode * stmt){
             // If there is an else branch, generate the code
             Builder->SetInsertPoint(elseBB);
             if (!ifStmt->elseBody.empty()) {
-                for (auto stmt : ifStmt->elseBody) {
+                for (const auto& stmt : ifStmt->elseBody) {
                     generator.GenStmt(stmt);
                 }
             }
@@ -462,7 +460,7 @@ void Generator::Generate(){
     // initialize llvm and get ready to begin codegen
     InitializeModule();
 
-    for(auto stmt : m_prog->stmts){
+    for(const auto& stmt : m_prog->stmts){
         Generator::GenStmt(stmt);
     }
 

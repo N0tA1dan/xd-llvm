@@ -103,7 +103,7 @@ int main(int argc, char * argv[]){
     Parser parser(tokens);
     auto prog = parser.Parse();
 
-    Generator generator(prog);
+    Generator generator(std::move(prog));
     
     generator.Generate();
 

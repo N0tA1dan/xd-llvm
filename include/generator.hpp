@@ -27,22 +27,23 @@
 
 class Generator{
     private:
-        ProgNode * m_prog;
+        std::unique_ptr<ProgNode> m_prog;
 
     public:
-        Generator(ProgNode * prog);
+        Generator(std::unique_ptr<ProgNode> prog) : m_prog(std::move(prog)) {}
 
         // --- ADDED/MODIFIED DECLARATIONS BELOW ---
         // New helper function to get LLVM Type
         llvm::Type* GetTypeFromToken(TokenType type); 
         
         // Return type changed from void to llvm::Value*
-        llvm::Value* GenPrimaryExpr(PrimaryExprNode * primaryExpr);
+        llvm::Value* GenPrimaryExpr(const std::unique_ptr<PrimaryExprNode>& primaryExpr);
         
         // Return type changed from void to llvm::Value*
-        llvm::Value* GenExpr(ExprNode * expr);
+        llvm::Value* GenExpr(const std::unique_ptr<ExprNode>& expr);
+
         
-        void GenStmt(StmtNode * stmt);
+        void GenStmt(const std::unique_ptr<StmtNode>& stmt);
         void Generate();
 
 };

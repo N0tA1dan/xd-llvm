@@ -36,24 +36,24 @@ struct IdentNode{
 struct ExprNode;
 
 struct PrimaryExprNode{
-    std::variant<IntLitNode*, FloatLitNode*, IdentNode*, ExprNode*> var;
+    std::variant<std::unique_ptr<IntLitNode>, std::unique_ptr<FloatLitNode>, std::unique_ptr<IdentNode>, std::unique_ptr<ExprNode>> var;
 };
 
 struct BinOpExpr{
     BinOpType type;
-    ExprNode * lhs;
-    ExprNode * rhs;
+    std::unique_ptr<ExprNode> lhs;
+    std::unique_ptr<ExprNode> rhs;
 };
 
 struct ConditionalOpExpr{
     ConditionalOpType type;
-    ExprNode * lhs;
-    ExprNode * rhs;
+    std::unique_ptr<ExprNode> lhs;
+    std::unique_ptr<ExprNode> rhs;
 };
 
 
 struct ExprNode{
-    std::variant<PrimaryExprNode*, BinOpExpr*, ConditionalOpExpr*> var;
+    std::variant<std::unique_ptr<PrimaryExprNode>, std::unique_ptr<BinOpExpr>, std::unique_ptr<ConditionalOpExpr>> var;
 };
 
 // forward decleration
@@ -63,50 +63,50 @@ struct ProtoTypeNode{
     Token name;
     Token returnType;
     int argCounter;
-    std::vector<StmtNode*> args;
+    std::vector<std::unique_ptr<StmtNode>> args;
 };
 
 struct FunctionNode{
-    ProtoTypeNode * prototype;
-    std::vector<StmtNode*> body;
+    std::unique_ptr<ProtoTypeNode> prototype;
+    std::vector<std::unique_ptr<StmtNode>> body;
 };
 
 struct DeclerationStmtNode{
     Token type;
     Token identifier;
-    std::optional<ExprNode*> expression;
+    std::optional<std::unique_ptr<ExprNode>> expression;
 };
 
 struct LetStmtNode{
     Token type;
     Token identifier;
-    std::optional<ExprNode*> expression;
+    std::optional<std::unique_ptr<ExprNode>> expression;
 };
 
 struct AssignmentNode{
 
     Token identifier;
-    ExprNode* expression;
+    std::unique_ptr<ExprNode> expression;
 };
 
 
 struct IfStmtNode{
-   ExprNode * condition; 
-   std::vector<StmtNode*> thenBody;
-   std::vector<StmtNode*> elseBody;
+   std::unique_ptr<ExprNode> condition; 
+   std::vector<std::unique_ptr<StmtNode>> thenBody;
+   std::vector<std::unique_ptr<StmtNode>> elseBody;
 };
 
 struct ReturnNode{
-    std::optional<std::variant<ExprNode*, IdentNode*>> retval;
+    std::optional<std::variant<std::unique_ptr<ExprNode>, std::unique_ptr<IdentNode>>> retval;
 };
 
 struct StmtNode{
-    std::variant<FunctionNode*, AssignmentNode*, IfStmtNode*, DeclerationStmtNode*> var;
+    std::variant<std::unique_ptr<FunctionNode>, std::unique_ptr<AssignmentNode>, std::unique_ptr<IfStmtNode>, std::unique_ptr<DeclerationStmtNode>> var;
 };
 
 
 struct ProgNode{
-    std::vector<StmtNode*> stmts;
+    std::vector<std::unique_ptr<StmtNode>> stmts;
 };
 
 class Parser{
@@ -123,18 +123,18 @@ class Parser{
 
         Parser(std::vector<Token> tokens) : m_tokens(tokens) {}
 
-        PrimaryExprNode * ParsePrimaryExpr();
-        ExprNode * ParseFactor();
-        ExprNode * ParseTerm();
-        ExprNode * ParseExpr();
-        ExprNode * ParseComparison();
-        ExprNode * ParseEquality();
-        ProtoTypeNode * ParseProto();
-        FunctionNode * ParseFunc();
-        LetStmtNode * ParseLetStmt();
-        AssignmentNode * ParseAssignmentStmt();
-        IfStmtNode * ParseIfStmt();
-        DeclerationStmtNode* ParseDecleration();
-        StmtNode * ParseStmt();
-        ProgNode * Parse();
+        std::unique_ptr<PrimaryExprNode> ParsePrimaryExpr();
+        std::unique_ptr<ExprNode> ParseFactor();
+        std::unique_ptr<ExprNode> ParseTerm();
+        std::unique_ptr<ExprNode> ParseExpr();
+        std::unique_ptr<ExprNode> ParseComparison();
+        std::unique_ptr<ExprNode> ParseEquality();
+        std::unique_ptr<ProtoTypeNode> ParseProto();
+        std::unique_ptr<FunctionNode> ParseFunc();
+        std::unique_ptr<LetStmtNode> ParseLetStmt();
+        std::unique_ptr<AssignmentNode> ParseAssignmentStmt();
+        std::unique_ptr<IfStmtNode> ParseIfStmt();
+        std::unique_ptr<DeclerationStmtNode> ParseDecleration();
+        std::unique_ptr<StmtNode> ParseStmt();
+        std::unique_ptr<ProgNode> Parse();
 };

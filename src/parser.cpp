@@ -40,33 +40,33 @@ void Parser::TryEat(TokenType token){
     }
 }
 
-PrimaryExprNode * Parser::ParsePrimaryExpr(){
-    PrimaryExprNode * primaryexpr = new PrimaryExprNode;
+std::unique_ptr<PrimaryExprNode> Parser::ParsePrimaryExpr(){
+    auto primaryexpr = std::make_unique<PrimaryExprNode>();
 
     if(peek().has_value()){
 
         switch(peek().value().type){
             case TokenType::INT_LIT:
                 {
-                    IntLitNode * intLit = new IntLitNode;
+                    auto intLit = std::make_unique<IntLitNode>();
                     intLit->val = eat();
-                    primaryexpr->var = intLit;
+                    primaryexpr->var = std::move(intLit);
                     break;
                 }
 
             case TokenType::FLOAT_LIT:
                 {
-                    FloatLitNode * floatLit = new FloatLitNode;
+                    auto floatLit = std::make_unique<FloatLitNode>();
                     floatLit->val = eat();
-                    primaryexpr->var = floatLit;
+                    primaryexpr->var = std::move(floatLit);
                     break;
                 }
 
             case TokenType::IDENT:
                 {
-                    IdentNode * ident = new IdentNode;
+                    auto ident = std::make_unique<IdentNode>();
                     ident->val = eat();
-                    primaryexpr->var = ident;
+                    primaryexpr->var = std::move(ident);
                     break;
                 }
 
@@ -74,11 +74,11 @@ PrimaryExprNode * Parser::ParsePrimaryExpr(){
                 {
                     eat();
 
-                    ExprNode * innerExpr = ParseExpr();
+                    auto innerExpr = ParseExpr();
 
                     TryEat(TokenType::CLOSE_PAREN);
 
-                    primaryexpr->var = innerExpr;
+                    primaryexpr->var = std::move(innerExpr);
 
                     break;
                 }
@@ -91,7 +91,7 @@ PrimaryExprNode * Parser::ParsePrimaryExpr(){
     return primaryexpr;
 }
 
-ExprNode * Parser::ParseFactor(){
+std::unique_ptr<ExprNode> Parser::ParseFactor(){
     auto lhs = ParsePrimaryExpr();
 
     if(!lhs){
@@ -99,8 +99,8 @@ ExprNode * Parser::ParseFactor(){
         exit(EXIT_FAILURE);
     } 
 
-    ExprNode * lhsexpr = new ExprNode;
-    lhsexpr->var = lhs;
+    auto lhsexpr = std::make_unique<ExprNode>();
+    lhsexpr->var = std::move(lhs);
 
     bool isBinExpr = false;
     
@@ -113,18 +113,18 @@ ExprNode * Parser::ParseFactor(){
                     isBinExpr = true;
                     eat(); // eats * token
                     auto rhs = ParsePrimaryExpr();
-                    ExprNode * rhsexpr = new ExprNode;
-                    rhsexpr->var = rhs;
+                    auto rhsexpr = std::make_unique<ExprNode>();
+                    rhsexpr->var = std::move(rhs);
 
-                    BinOpExpr * binexpr = new BinOpExpr; 
+                    auto binexpr = std::make_unique<BinOpExpr>();
                     binexpr->type = BinOpType::MUL;
 
-                    binexpr->lhs = lhsexpr;
-                    binexpr->rhs = rhsexpr;
+                    binexpr->lhs = std::move(lhsexpr);
+                    binexpr->rhs = std::move(rhsexpr);
 
-                    ExprNode * newexpr = new ExprNode;
-                    newexpr->var = binexpr;
-                    lhsexpr = newexpr;
+                    auto newexpr = std::make_unique<ExprNode>();
+                    newexpr->var = std::move(binexpr);
+                    lhsexpr = std::move(newexpr);
 
                     break;
                 }
@@ -132,20 +132,20 @@ ExprNode * Parser::ParseFactor(){
             case TokenType::DIV:
                 {
                     isBinExpr = true;
-                    eat(); // eats * token
+                    eat(); // eats / token
                     auto rhs = ParsePrimaryExpr();
-                    ExprNode * rhsexpr = new ExprNode;
-                    rhsexpr->var = rhs;
+                    auto rhsexpr = std::make_unique<ExprNode>();
+                    rhsexpr->var = std::move(rhs);
 
-                    BinOpExpr * binexpr = new BinOpExpr; 
+                    auto binexpr = std::make_unique<BinOpExpr>();
                     binexpr->type = BinOpType::DIV;
 
-                    binexpr->lhs = lhsexpr;
-                    binexpr->rhs = rhsexpr;
+                    binexpr->lhs = std::move(lhsexpr);
+                    binexpr->rhs = std::move(rhsexpr);
 
-                    ExprNode * newexpr = new ExprNode;
-                    newexpr->var = binexpr;
-                    lhsexpr = newexpr;
+                    auto newexpr = std::make_unique<ExprNode>();
+                    newexpr->var = std::move(binexpr);
+                    lhsexpr = std::move(newexpr);
 
                     break;
                 }
@@ -164,7 +164,7 @@ ExprNode * Parser::ParseFactor(){
 
 }
 
-ExprNode * Parser::ParseTerm(){
+std::unique_ptr<ExprNode> Parser::ParseTerm(){
 
     auto lhs = ParseFactor();
 
@@ -173,7 +173,7 @@ ExprNode * Parser::ParseTerm(){
         exit(EXIT_FAILURE);
     } 
 
-    ExprNode * lhsexpr = lhs;
+    auto lhsexpr = std::move(lhs);
 
     bool isBinExpr = false;
     
@@ -185,20 +185,20 @@ ExprNode * Parser::ParseTerm(){
             case TokenType::ADD:
                 {
                     isBinExpr = true;
-                    eat(); // eats * token
+                    eat(); // eats + token
                     auto rhs = ParseFactor();
-                    ExprNode * rhsexpr = new ExprNode;
-                    rhsexpr = rhs;
+                    auto rhsexpr = std::make_unique<ExprNode>();
+                    rhsexpr = std::move(rhs);
 
-                    BinOpExpr * binexpr = new BinOpExpr; 
+                    auto binexpr = std::make_unique<BinOpExpr>(); 
                     binexpr->type = BinOpType::ADD;
 
-                    binexpr->lhs = lhsexpr;
-                    binexpr->rhs = rhsexpr;
+                    binexpr->lhs = std::move(lhsexpr);
+                    binexpr->rhs = std::move(rhsexpr);
 
-                    ExprNode * newexpr = new ExprNode;
-                    newexpr->var = binexpr;
-                    lhsexpr = newexpr;
+                    auto newexpr = std::make_unique<ExprNode>();
+                    newexpr->var = std::move(binexpr);
+                    lhsexpr = std::move(newexpr);
 
                     break;
                 }
@@ -206,20 +206,20 @@ ExprNode * Parser::ParseTerm(){
             case TokenType::SUB:
                 {
                     isBinExpr = true;
-                    eat(); // eats * token
+                    eat(); // eats + token
                     auto rhs = ParseFactor();
-                    ExprNode * rhsexpr = new ExprNode;
-                    rhsexpr = rhs;
+                    auto rhsexpr = std::make_unique<ExprNode>();
+                    rhsexpr = std::move(rhs);
 
-                    BinOpExpr * binexpr = new BinOpExpr; 
+                    auto binexpr = std::make_unique<BinOpExpr>(); 
                     binexpr->type = BinOpType::SUB;
 
-                    binexpr->lhs = lhsexpr;
-                    binexpr->rhs = rhsexpr;
+                    binexpr->lhs = std::move(lhsexpr);
+                    binexpr->rhs = std::move(rhsexpr);
 
-                    ExprNode * newexpr = new ExprNode;
-                    newexpr->var = binexpr;
-                    lhsexpr = newexpr;
+                    auto newexpr = std::make_unique<ExprNode>();
+                    newexpr->var = std::move(binexpr);
+                    lhsexpr = std::move(newexpr);
 
                     break;
                 }
@@ -237,7 +237,7 @@ ExprNode * Parser::ParseTerm(){
     return lhsexpr;
 }
 
-ExprNode * Parser::ParseComparison(){
+std::unique_ptr<ExprNode> Parser::ParseComparison(){
     auto lhs = ParseTerm();
 
     if(!lhs){
@@ -245,7 +245,7 @@ ExprNode * Parser::ParseComparison(){
         exit(EXIT_FAILURE);
     }
 
-    ExprNode * lhsExpr = lhs;
+    auto lhsExpr = std::move(lhs);
 
 
     bool isConditional = false;
@@ -285,17 +285,17 @@ ExprNode * Parser::ParseComparison(){
 
         if(isConditional == true){
             
-            ExprNode * rhsExpr = ParseTerm(); 
+            auto rhsExpr = ParseTerm(); 
 
-            ConditionalOpExpr * conditionalOp = new ConditionalOpExpr;
+            auto conditionalOp = std::make_unique<ConditionalOpExpr>();
 
             conditionalOp->type = opType;
-            conditionalOp->lhs= lhsExpr;
-            conditionalOp->rhs= rhsExpr;
+            conditionalOp->lhs= std::move(lhsExpr);
+            conditionalOp->rhs= std::move(rhsExpr);
 
-            ExprNode * newExpr = new ExprNode;
-            newExpr->var = conditionalOp;
-            lhsExpr = newExpr;
+            auto newExpr = std::make_unique<ExprNode>();
+            newExpr->var = std::move(conditionalOp);
+            lhsExpr = std::move(newExpr);
             
         }
 
@@ -306,7 +306,7 @@ ExprNode * Parser::ParseComparison(){
     return lhsExpr;
 }
 
-ExprNode * Parser::ParseEquality(){
+std::unique_ptr<ExprNode> Parser::ParseEquality(){
     auto lhs = ParseComparison();
 
     if(!lhs){
@@ -314,7 +314,7 @@ ExprNode * Parser::ParseEquality(){
         exit(EXIT_FAILURE);
     }
 
-    ExprNode * lhsExpr = lhs;
+    auto lhsExpr = std::move(lhs);
 
 
     bool isConditional = false;
@@ -342,17 +342,17 @@ ExprNode * Parser::ParseEquality(){
 
         if(isConditional == true){
             
-            ExprNode * rhsExpr = ParseComparison(); 
+            auto rhsExpr = ParseComparison(); 
 
-            ConditionalOpExpr * conditionalOp = new ConditionalOpExpr;
+            auto conditionalOp = std::make_unique<ConditionalOpExpr>();
 
             conditionalOp->type = opType;
-            conditionalOp->lhs= lhsExpr;
-            conditionalOp->rhs= rhsExpr;
+            conditionalOp->lhs= std::move(lhsExpr);
+            conditionalOp->rhs= std::move(rhsExpr);
 
-            ExprNode * newExpr = new ExprNode;
-            newExpr->var = conditionalOp;
-            lhsExpr = newExpr;
+            auto newExpr = std::make_unique<ExprNode>();
+            newExpr->var = std::move(conditionalOp);
+            lhsExpr = std::move(newExpr);
             
         }
 
@@ -363,14 +363,14 @@ ExprNode * Parser::ParseEquality(){
 }
 
 
-ExprNode * Parser::ParseExpr(){
-    ExprNode * expr = ParseEquality();
+std::unique_ptr<ExprNode> Parser::ParseExpr(){
+    auto expr = ParseEquality();
     return expr;
 
 }
 
-ProtoTypeNode * Parser::ParseProto(){
-    auto proto = new ProtoTypeNode;
+std::unique_ptr<ProtoTypeNode> Parser::ParseProto(){
+    auto proto = std::make_unique<ProtoTypeNode>();
     proto->returnType= eat(); // eat return type
     proto->name = eat(); // eat name
 
@@ -386,14 +386,14 @@ ProtoTypeNode * Parser::ParseProto(){
     return proto;
 }
 
-FunctionNode * Parser::ParseFunc(){
+std::unique_ptr<FunctionNode> Parser::ParseFunc(){
     auto prototype = ParseProto(); 
     if(!prototype){
         std::cerr<<"error parsing prototype for function" << std::endl;
         exit(EXIT_FAILURE);
     }
-    FunctionNode * func = new FunctionNode;
-    func->prototype = prototype;
+    auto func = std::make_unique<FunctionNode>();
+    func->prototype = std::move(prototype);
 
     TryEat(TokenType::OPEN_BRACKET);
 
@@ -404,27 +404,8 @@ FunctionNode * Parser::ParseFunc(){
     return func;
 }
 
-LetStmtNode * Parser::ParseLetStmt(){
-    LetStmtNode * letstmt = new LetStmtNode;
-
-    letstmt->type = eat();
-
-    letstmt->identifier = eat();
-
-
-    if(peek().has_value() && peek().value().type == TokenType::EQUAL){
-        TryEat(TokenType::EQUAL);
-        letstmt->expression = ParseExpr();
-    }
-
-    TryEat(TokenType::SEMI);
-
-    return letstmt;
-
-}
-
-DeclerationStmtNode * Parser::ParseDecleration(){
-    DeclerationStmtNode* decleration = new DeclerationStmtNode;
+std::unique_ptr<DeclerationStmtNode> Parser::ParseDecleration(){
+    auto decleration = std::make_unique<DeclerationStmtNode>();
 
     decleration->type = eat();
 
@@ -442,8 +423,8 @@ DeclerationStmtNode * Parser::ParseDecleration(){
 
 }
 
-AssignmentNode * Parser::ParseAssignmentStmt(){
-    AssignmentNode * assignment = new AssignmentNode;
+std::unique_ptr<AssignmentNode> Parser::ParseAssignmentStmt(){
+    auto assignment = std::make_unique<AssignmentNode>();
 
     assignment->identifier = eat(); // eats identifier 
 
@@ -456,9 +437,9 @@ AssignmentNode * Parser::ParseAssignmentStmt(){
     return assignment;
 }
 
-IfStmtNode * Parser::ParseIfStmt(){
+std::unique_ptr<IfStmtNode> Parser::ParseIfStmt(){
 
-    IfStmtNode * ifStmt = new IfStmtNode;
+    auto ifStmt = std::make_unique<IfStmtNode>();
 
     TryEat(TokenType::OPEN_PAREN);  
 
@@ -492,8 +473,8 @@ IfStmtNode * Parser::ParseIfStmt(){
 
 }
 
-StmtNode * Parser::ParseStmt(){
-    auto stmt = new StmtNode;
+std::unique_ptr<StmtNode> Parser::ParseStmt(){
+    auto stmt = std::make_unique<StmtNode>();
 
     auto current = peek();
     if (!current.has_value()) {
@@ -505,24 +486,24 @@ StmtNode * Parser::ParseStmt(){
     // handles functions
     if(peek().value().type == TokenType::FN){
         eat(); // eat fn token
-        FunctionNode * func = ParseFunc();
+        auto func = ParseFunc();
         if(!func){
             std::cerr << "error parsing function" << std::endl;
             exit(EXIT_FAILURE);
         }
-        stmt->var = func;
+        stmt->var = std::move(func);
         
     }
 
     else if(peek().value().type == TokenType::INT || peek().value().type == TokenType::FLOAT){
 
-        DeclerationStmtNode* decleration = ParseDecleration();
+        auto decleration = ParseDecleration();
 
         if(!decleration){
             std::cerr << "error parsing let statement" << std::endl;
             exit(EXIT_FAILURE);
         }
-        stmt->var = decleration;
+        stmt->var = std::move(decleration);
     }
 
 
@@ -537,12 +518,12 @@ StmtNode * Parser::ParseStmt(){
 
         // assigment statement
         if (next->type == TokenType::EQUAL) {
-            AssignmentNode * assignment = ParseAssignmentStmt();
+            auto assignment = ParseAssignmentStmt();
             if (!assignment) {
                 std::cerr << "error parsing assignment" << std::endl;
                 exit(EXIT_FAILURE);
             }
-            stmt->var = assignment;
+            stmt->var = std::move(assignment);
         }
 
         // function call
@@ -552,27 +533,27 @@ StmtNode * Parser::ParseStmt(){
 
     else if(peek().value().type == TokenType::IF){
         eat(); // eats if token
-        IfStmtNode * ifStmt= ParseIfStmt();
+        auto ifStmt = ParseIfStmt();
 
         if(!ifStmt){
             std::cerr << "Error parsing if statement" << std::endl;
             exit(EXIT_FAILURE);
         }
-        stmt->var = ifStmt;
+        stmt->var = std::move(ifStmt);
     }
 
     return stmt;
 }
 
-ProgNode * Parser::Parse() {
-    ProgNode * prog = new ProgNode;  
+std::unique_ptr<ProgNode> Parser::Parse() {
+    auto prog = std::make_unique<ProgNode>();  
     while (peek().has_value()) {
         auto stmt = ParseStmt();
         if (!stmt) {
             std::cerr << "error parsing stmt" << std::endl;
             exit(EXIT_FAILURE);
         }
-        prog->stmts.push_back(stmt);
+        prog->stmts.push_back(std::move(stmt));
     }
     return prog;  
 }
