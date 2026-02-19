@@ -23,3 +23,5 @@ x 2026-01-12 generate the statements in the IF condition branch
 x 2026-01-14 make conditional expressions in generator accept multiple types (only int comparisson allowed)
 
 x 2026-01-17 change parser nodes to use std::unique_ptr
+
+2026-02-18 add function calls
