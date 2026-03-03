@@ -25,3 +25,5 @@ x 2026-01-14 make conditional expressions in generator accept multiple types (on
 x 2026-01-17 change parser nodes to use std::unique_ptr
 
 2026-02-18 add function calls
+
+2026-03-02 fix parsing function arguments as statements. instead add a new parsing function called parseArguments()
