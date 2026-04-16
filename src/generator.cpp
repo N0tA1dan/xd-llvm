@@ -225,6 +225,10 @@ llvm::Value* Generator::GenExpr(const std::unique_ptr<ExprNode>& expr){
                     case ConditionalOpType::NOT_EQUAL:
                         result = Builder->CreateICmpNE(leftHandSide, rightHandSide);
                         break;
+
+                    case ConditionalOpType::LESS_THAN:
+                        result = Builder->CreateICmpSLT(leftHandSide, rightHandSide);
+                        break;
                 }
             }
 
@@ -236,6 +240,10 @@ llvm::Value* Generator::GenExpr(const std::unique_ptr<ExprNode>& expr){
 
                     case ConditionalOpType::NOT_EQUAL:
                         result = Builder->CreateFCmpONE(leftHandSide, rightHandSide);
+                        break;
+
+                    case ConditionalOpType::LESS_THAN:
+                        result = Builder->CreateFCmpOLT(leftHandSide, rightHandSide);
                         break;
                 }
             }
