@@ -228,7 +228,7 @@ llvm::Value* Generator::GenExpr(const std::unique_ptr<ExprNode>& expr){
                 }
             }
 
-            if(leftType->isFloatingPointTy() && rightType->isFloatingPointTy()){
+            else if(leftType->isFloatingPointTy() && rightType->isFloatingPointTy()){
                 switch(conditionalExpr->type){
                     case ConditionalOpType::EQUAL_TO:
                         result = Builder->CreateFCmpOEQ(leftHandSide, rightHandSide);
