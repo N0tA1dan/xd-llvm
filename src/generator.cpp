@@ -25,27 +25,19 @@ std::unique_ptr<llvm::LLVMContext> TheContext;
 std::unique_ptr<llvm::IRBuilder<>> Builder;
 std::unique_ptr<llvm::Module> TheModule;
 
-// stores global variables declared outside functions.
 std::map<std::string, llvm::Value *> GlobalValues;
-// stores local variables inside functions. Gets cleared after every generation of a function
-std::map<std::string, llvm::AllocaInst*> NamedValues;
-// holds the current function pointer globally to know where to insert variables and other stuff. 
+std::map<std::string, VarInfo> NamedValues;
 llvm::Function * CurrentFunc = nullptr;
 
-// for doing alloc stuff in functions. like %stack = alloca i32
-static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *TheFunction, llvm::Type * Type,llvm::StringRef VarName) {
+static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *TheFunction, llvm::Type * Type, llvm::StringRef VarName) {
     if (!TheFunction) return nullptr;
-    
     llvm::IRBuilder<> TmpB(&TheFunction->getEntryBlock(), TheFunction->getEntryBlock().begin());
-    return TmpB.CreateAlloca(Type, nullptr,VarName);
+    return TmpB.CreateAlloca(Type, nullptr, VarName);
 }
 
 void InitializeModule(){
-    // Open a new context and module.
     TheContext = std::make_unique<llvm::LLVMContext>();
     TheModule = std::make_unique<llvm::Module>("XD Compiler", *TheContext);
-
-    // Create a new builder for the module.
     Builder = std::make_unique<llvm::IRBuilder<>>(*TheContext);
 }
 
@@ -53,181 +45,166 @@ llvm::Type* Generator::GetTypeFromToken(TokenType type) {
     switch(type){
         case TokenType::INT:
             return llvm::Type::getInt32Ty(*TheContext);
+        case TokenType::UINT:
+            return llvm::Type::getInt32Ty(*TheContext);
         case TokenType::FLOAT:
             return llvm::Type::getFloatTy(*TheContext);
         case TokenType::VOID:
             return llvm::Type::getVoidTy(*TheContext);
         default:
-            // DEBUG: Log the unhandled token type value
             llvm::errs() << "DEBUG: Unhandled TokenType (" << (int)type << ") in GetTypeFromToken.\n";
             return nullptr;
     }
 }
 
-llvm::Value* Generator::GenPrimaryExpr(const std::unique_ptr<PrimaryExprNode>& primaryExpr){
+TypedValue Generator::GenPrimaryExpr(const std::unique_ptr<PrimaryExprNode>& primaryExpr){
     struct PrimaryExprVisitor{
         Generator & generator;
-        llvm::Value* result = nullptr; // Holds the result of the visit
+        TypedValue value = {nullptr, false};
 
         void operator()(const std::unique_ptr<IntLitNode>& intLit){
-            
             std::string intValueStr = intLit->val.value.value();
-            
-            result = Builder->getInt32(std::stoi(intValueStr));
+            value.value = Builder->getInt32(std::stoi(intValueStr));
         }
 
         void operator()(const std::unique_ptr<FloatLitNode>& floatLit){
-            
             std::string floatValueStr = floatLit->val.value.value();
-            
-            result = llvm::ConstantFP::get(llvm::Type::getFloatTy(*TheContext), std::stof(floatValueStr));
+            value.value = llvm::ConstantFP::get(llvm::Type::getFloatTy(*TheContext), std::stof(floatValueStr));
         }
 
         void operator()(const std::unique_ptr<IdentNode>& ident){
-
-            // global variable generation
             if(CurrentFunc == nullptr){
-                
+                return;
             }
 
-            // currently inside a function
             if(CurrentFunc != nullptr){
-
                 std::string variableName = ident->val.value.value();
 
-                if(NamedValues.find(ident->val.value.value()) == NamedValues.end()){
+                if(NamedValues.find(variableName) == NamedValues.end()){
                     llvm::errs() << "Error: Undefined variable: " << variableName << '\n';
-                    result = nullptr;
+                    value = {nullptr, false};
+                    return;
                 }
 
-                llvm::AllocaInst* variable = NamedValues.at(variableName);
+                VarInfo info = NamedValues.at(variableName);
+                value.isUnsigned = info.isUnsigned;
+                llvm::AllocaInst* variable = info.alloca;
                 llvm::Type* variableType = variable->getAllocatedType();
-                result = Builder->CreateLoad(variableType, variable);
+                value.value = Builder->CreateLoad(variableType, variable);
             } 
         }
         
-        // Handles expressions within parenthesis. Eg: (10*5)
         void operator()(const std::unique_ptr<ExprNode>& innerExpr){
-            result = generator.GenExpr(innerExpr);
+            value = generator.GenExpr(innerExpr);
         }
     };
 
     PrimaryExprVisitor visitor = {*this};
     std::visit(visitor, primaryExpr->var);
-    return visitor.result;
+    return visitor.value;
 }
 
-llvm::Value* Generator::GenExpr(const std::unique_ptr<ExprNode>& expr){
+TypedValue Generator::GenExpr(const std::unique_ptr<ExprNode>& expr){
 
     if (!expr) {
         llvm::errs() << "ERROR: GenExpr called with nullptr ExprNode\n";
-        return nullptr;
+        return {nullptr, false};
     }
-
 
     struct ExprVisitor{
         Generator & generator;
-        llvm::Value* result = nullptr; 
+        TypedValue value = {nullptr, false};
 
         void operator()(const std::unique_ptr<PrimaryExprNode>& primaryExpr){
-            result = generator.GenPrimaryExpr(primaryExpr);
+            value = generator.GenPrimaryExpr(primaryExpr);
         }
 
         void operator()(const std::unique_ptr<BinOpExpr>& binExpr){
 
-            llvm::Value * leftHandSide = generator.GenExpr(binExpr->lhs);
-            llvm::Value * rightHandSide = generator.GenExpr(binExpr->rhs);
+            TypedValue lhs = generator.GenExpr(binExpr->lhs);
+            TypedValue rhs = generator.GenExpr(binExpr->rhs);
 
-            llvm::Type * leftType = leftHandSide->getType();
-            llvm::Type * rightType = rightHandSide->getType();
-            
-            // Check for null operands (like from the unhandled PrimaryExpr case)
-            if (!leftHandSide || !rightHandSide) {
+            if (!lhs.value || !rhs.value) {
                 llvm::errs() << "ERROR: Null operand encountered in binary expression.\n";
-                result = nullptr;
+                value = {nullptr, false};
                 return;
             }
 
-            // creates operations specifically for integer types
-            if(leftType->isIntegerTy() == true && rightType->isIntegerTy() == true){
+            llvm::Type * leftType = lhs.value->getType();
+            llvm::Type * rightType = rhs.value->getType();
+
+            if(leftType->isIntegerTy() && rightType->isIntegerTy()){
+                bool isUnsigned = lhs.isUnsigned || rhs.isUnsigned;
+
                 switch(binExpr->type){
-
                     case BinOpType::ADD:
-                        result = Builder->CreateAdd(leftHandSide, rightHandSide);
+                        value = {Builder->CreateAdd(lhs.value, rhs.value), isUnsigned};
                         break;
-
                     case BinOpType::SUB:
-                        result = Builder->CreateSub(leftHandSide, rightHandSide);
+                        value = {Builder->CreateSub(lhs.value, rhs.value), isUnsigned};
                         break;
-
                     case BinOpType::MUL:
-                        result = Builder->CreateMul(leftHandSide, rightHandSide);
+                        value = {Builder->CreateMul(lhs.value, rhs.value), isUnsigned};
                         break;
-
                     case BinOpType::DIV:
-                        result = Builder->CreateSDiv(leftHandSide, rightHandSide);
+                        value = isUnsigned
+                            ? TypedValue{Builder->CreateUDiv(lhs.value, rhs.value), true}
+                            : TypedValue{Builder->CreateSDiv(lhs.value, rhs.value), false};
                         break;
-
                     default:
-                        llvm::errs() << "DEBUG: Error unknown operation between expression" << '\n'; 
+                        llvm::errs() << "DEBUG: Error unknown operation between expression\n"; 
                         break;
                 }
-
                 return;
             }
 
-            // use floating point llvm instructions instead
-            if(leftType->isFloatingPointTy() == true && rightType->isFloatingPointTy() == true){
-
+            if(leftType->isFloatingPointTy() && rightType->isFloatingPointTy()){
                 switch(binExpr->type){
                     case BinOpType::ADD:
-                        result = Builder->CreateFAdd(leftHandSide, rightHandSide);
+                        value.value = Builder->CreateFAdd(lhs.value, rhs.value);
                         break;
-
                     case BinOpType::SUB:
-                        result = Builder->CreateFSub(leftHandSide, rightHandSide);
+                        value.value = Builder->CreateFSub(lhs.value, rhs.value);
                         break;
-
                     case BinOpType::MUL:
-                        result = Builder->CreateFMul(leftHandSide, rightHandSide);
+                        value.value = Builder->CreateFMul(lhs.value, rhs.value);
                         break;
-
                     case BinOpType::DIV:
-                        result = Builder->CreateFDiv(leftHandSide, rightHandSide);
+                        value.value = Builder->CreateFDiv(lhs.value, rhs.value);
                         break;
-
                     default:
-                        llvm::errs() << "DEBUG: Error unknown operation between expression" << '\n'; 
+                        llvm::errs() << "DEBUG: Error unknown operation between expression\n"; 
                         break;
                 }
-
                 return;
             }
 
             llvm::errs() << "ERROR: Invalid operand types for binary expression. LHS="
                  << *leftType << " RHS=" << *rightType << "\n";
-            result = nullptr;
+            value = {nullptr, false};
         }
 
         void operator()(const std::unique_ptr<ConditionalOpExpr>& conditionalExpr){
-            llvm::Value * leftHandSide = generator.GenExpr(conditionalExpr->lhs);
-            llvm::Value * rightHandSide = generator.GenExpr(conditionalExpr->rhs);
+            TypedValue lhs = generator.GenExpr(conditionalExpr->lhs);
+            TypedValue rhs = generator.GenExpr(conditionalExpr->rhs);
 
-            llvm::Type * leftType = leftHandSide->getType();
-            llvm::Type * rightType = rightHandSide->getType();
+            llvm::Type * leftType = lhs.value->getType();
+            llvm::Type * rightType = rhs.value->getType();
 
             if(leftType->isIntegerTy() && rightType->isIntegerTy()){
+                bool isUnsigned = lhs.isUnsigned || rhs.isUnsigned;
+
                 switch(conditionalExpr->type){
                     case ConditionalOpType::EQUAL_TO:
-                        result = Builder->CreateICmpEQ(leftHandSide, rightHandSide);
+                        value.value = Builder->CreateICmpEQ(lhs.value, rhs.value);
                         break;
-
                     case ConditionalOpType::NOT_EQUAL:
-                        result = Builder->CreateICmpNE(leftHandSide, rightHandSide);
+                        value.value = Builder->CreateICmpNE(lhs.value, rhs.value);
                         break;
-
                     case ConditionalOpType::LESS_THAN:
-                        result = Builder->CreateICmpSLT(leftHandSide, rightHandSide);
+                        value.value = isUnsigned
+                            ? Builder->CreateICmpULT(lhs.value, rhs.value)
+                            : Builder->CreateICmpSLT(lhs.value, rhs.value);
                         break;
                 }
             }
@@ -235,124 +212,96 @@ llvm::Value* Generator::GenExpr(const std::unique_ptr<ExprNode>& expr){
             else if(leftType->isFloatingPointTy() && rightType->isFloatingPointTy()){
                 switch(conditionalExpr->type){
                     case ConditionalOpType::EQUAL_TO:
-                        result = Builder->CreateFCmpOEQ(leftHandSide, rightHandSide);
+                        value.value = Builder->CreateFCmpOEQ(lhs.value, rhs.value);
                         break;
-
                     case ConditionalOpType::NOT_EQUAL:
-                        result = Builder->CreateFCmpONE(leftHandSide, rightHandSide);
+                        value.value = Builder->CreateFCmpONE(lhs.value, rhs.value);
                         break;
-
                     case ConditionalOpType::LESS_THAN:
-                        result = Builder->CreateFCmpOLT(leftHandSide, rightHandSide);
+                        value.value = Builder->CreateFCmpOLT(lhs.value, rhs.value);
                         break;
                 }
             }
 
             else{
-                llvm::errs() << "Error Comparrison between expressions failed, type mismatch" << '\n';
+                llvm::errs() << "Error Comparison between expressions failed, type mismatch\n";
             }
         }
     };
 
     ExprVisitor visitor = {*this};
     std::visit(visitor, expr->var);
-    return visitor.result;
+    return visitor.value;
 }
 
 void Generator::GenStmt(const std::unique_ptr<StmtNode>& stmt){
     struct StmtVisitor{
         Generator & generator;
         
-        // handles let statements
         void operator()(const std::unique_ptr<DeclerationStmtNode>& decleration){
-            // Fixed the call: The helper is a member of Generator, not the StmtVisitor.
             llvm::Type * VarType = generator.GetTypeFromToken(decleration->type.type);
-            if (!VarType) return; // Error handling for unknown type
+            if (!VarType) return;
 
-            // Handle Global vs Local Declarations
             if (CurrentFunc == nullptr) {
-                // Global Variable Declaration
-                
                 llvm::Constant * Initializer = nullptr;
                 if (VarType->isIntegerTy()) {
-                    // Default to 0 for integers
                     Initializer = llvm::ConstantInt::get(VarType, 0);
                 } else if (VarType->isFloatTy()) {
-                    // Default to 0.0 for floats
                     Initializer = llvm::ConstantFP::get(VarType, 0.0);
                 } else {
-                    // Handle other types or skip
                     return;
                 }
 
                 llvm::GlobalVariable* GlobalVar = new llvm::GlobalVariable(
-                    *TheModule, // Module to add to
-                    VarType,    // Type
-                    false,      // isConstant (Mutable)
-                    llvm::GlobalValue::ExternalLinkage, // Linkage type
-                    Initializer, // Initializer
-                    decleration->identifier.value.value() // Name
+                    *TheModule, VarType, false,
+                    llvm::GlobalValue::ExternalLinkage,
+                    Initializer,
+                    decleration->identifier.value.value()
                 );
                 
                 GlobalValues[decleration->identifier.value.value()] = GlobalVar;
                 return;
 
             } else {
-                // Local Variable Declaration (inside a function)
                 llvm::AllocaInst* Alloc = CreateEntryBlockAlloca(CurrentFunc, VarType, decleration->identifier.value.value());
                 
                 if (VarType->isIntegerTy(32) || VarType->isFloatTy()) {
-                    // This section now needs to call GenExpr
-
                     if(decleration->expression.has_value()){
-
-                        llvm::Value* InitialValue = generator.GenExpr(decleration->expression.value());
-                        if (InitialValue) { Builder->CreateStore(InitialValue, Alloc);
+                        TypedValue InitialValue = generator.GenExpr(decleration->expression.value());
+                        if (InitialValue.value) {
+                            Builder->CreateStore(InitialValue.value, Alloc);
                         } else {
-                            // Handle case where InitialValue is null (e.g., if there was an error in GenExpr)
                             llvm::errs() << "ERROR: Failed to generate IR for initializer expression of variable: " << decleration->identifier.value.value() << "\n";
                         }
                     }
-                    
                 }
                 
-                NamedValues[decleration->identifier.value.value()] = Alloc;
+                VarInfo info;
+                info.isUnsigned = (decleration->type.type == TokenType::UINT);
+                info.alloca = Alloc;
+                NamedValues[decleration->identifier.value.value()] = info;
                 return;
             }
         }
 
-        // handles function generation
         void operator()(const std::unique_ptr<FunctionNode>& Function){
 
             llvm::Type* ReturnType = generator.GetTypeFromToken(Function->prototype->returnType.type);
             
             if (!ReturnType) {
-                // DEBUG: Log the failure and function name
                 llvm::errs() << "DEBUG: Function Gen failed - ReturnType is null for function: " 
                              << Function->prototype->name.value.value() << "\n";
-                return; // Early exit if return type is unknown/unhandled
+                return;
             } 
 
-            // initializes the function object and checks if function has any arguments/parameters
             llvm::FunctionType * funcType = nullptr;
 
-            if(Function->prototype->argCounter== 0){
+            if(Function->prototype->argCounter == 0){
                 funcType = llvm::FunctionType::get(ReturnType, false);
             } else{
-                // make sure to create a func with arguments here
-                // Placeholder for argument handling
-                std::vector<llvm::Type*> ArgTypes;
-                // Assuming Function->prototype->args is a vector of Type/Ident pairs
-                // for (const auto& arg : Function->prototype->args) {
-                //     ArgTypes.push_back(generator.GetTypeFromToken(arg.type.type));
-                // }
-                // funcType = llvm::FunctionType::get(ReturnType, ArgTypes, false);
-                
-                // Using no args for now until AST structure for args is clearer
                 funcType = llvm::FunctionType::get(ReturnType, false);
             }
 
-            // Create function object
             llvm::Function* func = llvm::Function::Create(
                 funcType,
                 llvm::Function::ExternalLinkage,
@@ -360,21 +309,16 @@ void Generator::GenStmt(const std::unique_ptr<StmtNode>& stmt){
                 TheModule.get()
             );
 
-            // Create entry block
             llvm::BasicBlock* entryBB = llvm::BasicBlock::Create(*TheContext, "entry", func);
             Builder->SetInsertPoint(entryBB);
 
-            // clear all previously declared local variables and set the global function variable to our new function
             NamedValues.clear();
             CurrentFunc = func;
 
-
-            // generate all statements made in function body
             for(const auto& stmt : Function->body){
                 generator.GenStmt(stmt);
             }
 
-            // generate return stmt
             if (!Builder->GetInsertBlock()->getTerminator()) {
                 if (ReturnType->isVoidTy()) {
                     Builder->CreateRetVoid();
@@ -384,56 +328,42 @@ void Generator::GenStmt(const std::unique_ptr<StmtNode>& stmt){
             }
 
             llvm::verifyFunction(*func);
-            // Clear CurrentFunc after function generation completes
             CurrentFunc = nullptr;
         }
 
-        // handles reassignment
         void operator()(const std::unique_ptr<AssignmentNode>& assignment){
-            
-            // inside a function
             if(CurrentFunc != nullptr){
-                
-                
                 if(NamedValues.find(assignment->identifier.value.value()) == NamedValues.end()){
-                    llvm::errs() << "ERROR: Variable is unitialized" << '\n';
+                    llvm::errs() << "ERROR: Variable is uninitialized\n";
                     exit(EXIT_FAILURE);
                 }
                 
-                llvm::Value * newValue = generator.GenExpr(assignment->expression);
-                llvm::Value * ptrToVariable = NamedValues.at(assignment->identifier.value.value());
+                TypedValue newValue = generator.GenExpr(assignment->expression);
+                VarInfo& info = NamedValues.at(assignment->identifier.value.value());
 
-                if(newValue){
-                    Builder->CreateStore(newValue, ptrToVariable);
+                if(newValue.value){
+                    Builder->CreateStore(newValue.value, info.alloca);
                 } else {
-                    llvm::errs() << "ERROR: Unexpected error generating expression for assignment operation" << '\n';
+                    llvm::errs() << "ERROR: Unexpected error generating expression for assignment operation\n";
                 }
-
-            }
-
-            // within global scope
-            else if(CurrentFunc == nullptr){
-
             }
         }
 
-        // handles if statements
         void operator()(const std::unique_ptr<IfStmtNode>& ifStmt){
             if(CurrentFunc == nullptr){
-                llvm::errs() << "ERROR: If statement must be contained within a function" << '\n';
+                llvm::errs() << "ERROR: If statement must be contained within a function\n";
                 exit(EXIT_FAILURE);
             }
 
-            auto condition = generator.GenExpr(ifStmt->condition);
+            TypedValue condition = generator.GenExpr(ifStmt->condition);
 
             llvm::BasicBlock* thenBB = llvm::BasicBlock::Create(*TheContext, "then", CurrentFunc);
             llvm::BasicBlock* elseBB = llvm::BasicBlock::Create(*TheContext, "else", CurrentFunc);
             llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(*TheContext, "merge", CurrentFunc);
 
-            Builder->CreateCondBr(condition, thenBB, elseBB);
+            Builder->CreateCondBr(condition.value, thenBB, elseBB);
             Builder->SetInsertPoint(thenBB);
 
-            // Generate the if statment body
             for (const auto& stmt : ifStmt->thenBody) {
                 generator.GenStmt(stmt);
             }
@@ -441,7 +371,6 @@ void Generator::GenStmt(const std::unique_ptr<StmtNode>& stmt){
                 Builder->CreateBr(mergeBB);
             }
 
-            // If there is an else branch, generate the code
             Builder->SetInsertPoint(elseBB);
             if (!ifStmt->elseBody.empty()) {
                 for (const auto& stmt : ifStmt->elseBody) {
@@ -452,19 +381,14 @@ void Generator::GenStmt(const std::unique_ptr<StmtNode>& stmt){
                 Builder->CreateBr(mergeBB);
             }
 
-            // continue generation in merge branch
             Builder->SetInsertPoint(mergeBB);
-
         }
     };
-
 
     std::visit(StmtVisitor{*this}, stmt->var);
 }
 
 void Generator::Generate(){
-
-    // initialize llvm and get ready to begin codegen
     InitializeModule();
 
     for(const auto& stmt : m_prog->stmts){
@@ -472,5 +396,4 @@ void Generator::Generate(){
     }
 
     TheModule->print(llvm::errs(), nullptr);
-
 }

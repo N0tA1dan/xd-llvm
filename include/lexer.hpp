@@ -22,6 +22,7 @@ enum class TokenType{
     OPEN_BRACKET,
     CLOSE_BRACKET,
     INT,
+    UINT,
     FLOAT,
     CHAR,
     VOID,
@@ -58,6 +59,7 @@ class Lexer{
         std::unordered_map<std::string, TokenType> m_TokenMap = {
             {"exit", TokenType::EXIT},
             {"int", TokenType::INT},
+            {"uint", TokenType::UINT},
             {"char", TokenType::CHAR},
             {"float", TokenType::FLOAT},
             {"void", TokenType::VOID},

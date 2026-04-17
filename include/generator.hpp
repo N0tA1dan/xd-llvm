@@ -24,6 +24,15 @@
 #include <string>
 #include <vector>
 
+struct VarInfo{
+  llvm::AllocaInst* alloca;
+  bool isUnsigned;
+};
+
+struct TypedValue{
+  llvm::Value * value;
+  bool isUnsigned = false;
+};
 
 class Generator{
     private:
@@ -36,11 +45,9 @@ class Generator{
         // New helper function to get LLVM Type
         llvm::Type* GetTypeFromToken(TokenType type); 
         
-        // Return type changed from void to llvm::Value*
-        llvm::Value* GenPrimaryExpr(const std::unique_ptr<PrimaryExprNode>& primaryExpr);
+        TypedValue GenPrimaryExpr(const std::unique_ptr<PrimaryExprNode>& primaryExpr);
         
-        // Return type changed from void to llvm::Value*
-        llvm::Value* GenExpr(const std::unique_ptr<ExprNode>& expr);
+        TypedValue GenExpr(const std::unique_ptr<ExprNode>& expr);
 
         
         void GenStmt(const std::unique_ptr<StmtNode>& stmt);

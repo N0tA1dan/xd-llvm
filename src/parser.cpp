@@ -495,7 +495,7 @@ std::unique_ptr<StmtNode> Parser::ParseStmt(){
         
     }
 
-    else if(peek().value().type == TokenType::INT || peek().value().type == TokenType::FLOAT){
+    else if(peek().value().type == TokenType::INT || peek().value().type == TokenType::FLOAT || peek().value().type == TokenType::UINT){
 
         auto decleration = ParseDecleration();
 
