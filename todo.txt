@@ -4,11 +4,9 @@ x 2025-10-14 replace if else branches in lexer with unordered_map
 
 x 2025-10-15 update parser to successfully parse parenthesis. example: (10-5)+2
 
-2025-10-15 update generator completely.
-
 2025-10-22 update expresssion generation for binary operations
 
-2025-10-24 Allow for integers and floats to be compatible with binary operations
+x 2025-10-24 Allow for integers and floats to be compatible with binary operations
 
 x 2025-10-27 add if statements
 
@@ -30,6 +28,6 @@ x 2026-01-17 change parser nodes to use std::unique_ptr
 
 2026-04-14 add syntax.md to show document syntax of language
 
-2026-04-16 add signed and unsigned integers
+x 2026-04-16 add signed and unsigned integers
 
 2026-04-17 add semantic analyzer because generator is doing too much validation

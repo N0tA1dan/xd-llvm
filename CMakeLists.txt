@@ -19,6 +19,7 @@ add_executable(xd
     src/main.cpp
     src/lexer.cpp
     src/parser.cpp
+    src/analysis.cpp
     src/generator.cpp
 )
 
