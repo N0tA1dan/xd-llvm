@@ -111,14 +111,14 @@ int main(int argc, char * argv[]){
     Parser parser(tokens);
     auto prog = parser.Parse();
 
-    Analyzer analyzer(std::move(prog));
-    bool analyzed = analyzer.Analyze();
+    Analyzer analyzer;
+    bool analyzed = analyzer.Analyze(prog);
 
     if(analyzed == false){
       exit(EXIT_FAILURE);
     }
 
-    Generator generator(std::move(analyzer.m_prog));
+    Generator generator(std::move(prog));
     generator.Generate();
 
     return 0;

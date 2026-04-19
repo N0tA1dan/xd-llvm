@@ -16,11 +16,10 @@ class Analyzer{
 
 
   public:
-    std::unique_ptr<ProgNode> m_prog;
-    Analyzer(std::unique_ptr<ProgNode> prog) : m_prog(std::move(prog)) {}
+    Analyzer() = default; 
     
 
     void AnalyzeStmt(const std::unique_ptr<StmtNode>& stmt);
-    bool Analyze();
+    bool Analyze(const std::unique_ptr<ProgNode>& prog);
 
 };

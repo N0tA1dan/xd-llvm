@@ -42,8 +42,8 @@ void Analyzer::AnalyzeStmt(const std::unique_ptr<StmtNode>& stmt){
 
 }
 
-bool Analyzer::Analyze(){
-  for(const auto& stmt : m_prog->stmts){
+bool Analyzer::Analyze(const std::unique_ptr<ProgNode>& prog){
+  for(const auto& stmt : prog->stmts){
     AnalyzeStmt(stmt);
   }
 
