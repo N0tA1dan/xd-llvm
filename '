@@ -1,0 +1,11 @@
+#include <iostream>
+
+static int x = 10;
+int main(){
+  int y = x;
+  int y = 10;
+
+  int z = 1;
+  int z = 2;
+}
+

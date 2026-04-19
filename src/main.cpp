@@ -1,5 +1,6 @@
 #include "lexer.hpp"
 #include "parser.hpp"
+#include "analysis.hpp"
 #include "generator.hpp"
 #include <fstream>
 #include <sstream>
@@ -110,8 +111,14 @@ int main(int argc, char * argv[]){
     Parser parser(tokens);
     auto prog = parser.Parse();
 
-    Generator generator(std::move(prog));
-    
+    Analyzer analyzer(std::move(prog));
+    bool analyzed = analyzer.Analyze();
+
+    if(analyzed == false){
+      exit(EXIT_FAILURE);
+    }
+
+    Generator generator(std::move(analyzer.m_prog));
     generator.Generate();
 
     return 0;
