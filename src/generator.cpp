@@ -388,10 +388,10 @@ void Generator::GenStmt(const std::unique_ptr<StmtNode>& stmt){
     std::visit(StmtVisitor{*this}, stmt->var);
 }
 
-void Generator::Generate(){
+void Generator::Generate(const std::unique_ptr<ProgNode>& prog){
     InitializeModule();
 
-    for(const auto& stmt : m_prog->stmts){
+    for(const auto& stmt : prog->stmts){
         Generator::GenStmt(stmt);
     }
 

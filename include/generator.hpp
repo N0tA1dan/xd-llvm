@@ -39,7 +39,7 @@ class Generator{
         std::unique_ptr<ProgNode> m_prog;
 
     public:
-        Generator(std::unique_ptr<ProgNode> prog) : m_prog(std::move(prog)) {}
+        Generator() = default;
 
         // --- ADDED/MODIFIED DECLARATIONS BELOW ---
         // New helper function to get LLVM Type
@@ -51,6 +51,6 @@ class Generator{
 
         
         void GenStmt(const std::unique_ptr<StmtNode>& stmt);
-        void Generate();
+        void Generate(const std::unique_ptr<ProgNode>& prog);
 
 };

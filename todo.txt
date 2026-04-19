@@ -34,8 +34,10 @@ x 2026-04-16 add signed and unsigned integers
 
 2026-04-18 fix the Token naming. value.value() and type.type is annoying
 
+2026-04-18 finish semantic analyzer before working on more code generation
+
 2026-04-18 add ability to check errors at specific lines in semantic analyzer 
 
 2026-04-18 clean up generator.cpp. semantic analyzer should clear all the errors
 
-2026-04-18 figure out scoping for analysis and generator
+2026-04-18 figure out scoping for analysis and generator possibly using vectors

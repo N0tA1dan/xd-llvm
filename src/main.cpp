@@ -118,8 +118,8 @@ int main(int argc, char * argv[]){
       exit(EXIT_FAILURE);
     }
 
-    Generator generator(std::move(prog));
-    generator.Generate();
+    Generator generator;
+    generator.Generate(prog);
 
     return 0;
 }
