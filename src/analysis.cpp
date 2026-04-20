@@ -1,11 +1,37 @@
 #include "analysis.hpp"
 
+void Analyzer::AnalyzeExpr(const std::unique_ptr<ExprNode>& expr){
+  struct ExprVisitor{
+    Analyzer& self;
+
+      void operator()(const std::unique_ptr<PrimaryExprNode>& primaryExpr){
+        return;
+      }
+
+      void operator()(const std::unique_ptr<BinOpExpr>& binExpr){
+        return;
+      }
+
+      void operator()(const std::unique_ptr<ConditionalOpExpr>& conditionalExpr){
+        return;
+      }
+  };
+
+  std::visit(ExprVisitor{*this}, expr->var);
+
+}
+
 void Analyzer::AnalyzeStmt(const std::unique_ptr<StmtNode>& stmt){
   struct StmtVisitor{
     Analyzer& self;
 
-    // handles type checking and checks if variables exist
+    // handles type checking and checks if variables exist and if its initialized
     void operator()(const std::unique_ptr<AssignmentNode>& assignment){
+      auto variableName = assignment->identifier.value.value();
+
+      if(self.m_scopes.back().find(variableName) == self.m_scopes.back().end()){
+        self.m_errors.push_back("error: variable '" + variableName + "' was not declared in this scope \n");
+      }
       return;
     }
 
@@ -15,6 +41,7 @@ void Analyzer::AnalyzeStmt(const std::unique_ptr<StmtNode>& stmt){
 
     void operator()(const std::unique_ptr<FunctionNode>& function){
       // create a new scope?
+      self.m_scopes.push_back({});
       for(const auto& stmt : function->body){
         self.AnalyzeStmt(stmt);
       }
@@ -25,11 +52,11 @@ void Analyzer::AnalyzeStmt(const std::unique_ptr<StmtNode>& stmt){
       // check map if decleration already exists if not add it to symbols
       auto variableName = decleration->identifier.value.value();
 
-      if(self.m_symbols.find(variableName) != self.m_symbols.end()){
+      if(self.m_scopes.back().find(variableName) != self.m_scopes.back().end()){
         self.m_errors.push_back("error: redecleration of variable " + variableName + '\n');
         
       }else{
-        self.m_symbols.insert({variableName, {decleration->type.type, true}});
+        self.m_scopes.back().insert({variableName, {decleration->type.type, true}});
       }
 
       return;

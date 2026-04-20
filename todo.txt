@@ -41,3 +41,9 @@ x 2026-04-17 add semantic analyzer because generator is doing too much validatio
 2026-04-18 clean up generator.cpp. semantic analyzer should clear all the errors
 
 2026-04-18 figure out scoping for analysis and generator possibly using vectors
+
+2026-04-19 clean up generator.cpp 
+
+2026-04-19 add a index/tracker to know where scopes are. would have to consider going back to another scope after a block
+
+2026-04-19 maybe change symbol table / scopes to a stack data structure instead of vector

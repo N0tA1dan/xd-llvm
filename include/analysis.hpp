@@ -10,6 +10,7 @@ struct SymbolInfo{
 
 class Analyzer{
   private:
+    size_t m_scope_index = 0;
     std::unordered_map<std::string, SymbolInfo> m_symbols;
     std::vector<std::unordered_map<std::string, SymbolInfo>> m_scopes;
     std::vector<std::string> m_errors;
@@ -19,6 +20,7 @@ class Analyzer{
     Analyzer() = default; 
     
 
+    void AnalyzeExpr(const std::unique_ptr<ExprNode>& expr);
     void AnalyzeStmt(const std::unique_ptr<StmtNode>& stmt);
     bool Analyze(const std::unique_ptr<ProgNode>& prog);
 

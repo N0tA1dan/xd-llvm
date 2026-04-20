@@ -78,7 +78,6 @@ struct DeclerationStmtNode{
 };
 
 struct AssignmentNode{
-
     Token identifier;
     std::unique_ptr<ExprNode> expression;
 };
