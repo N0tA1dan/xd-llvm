@@ -237,6 +237,15 @@ TypedValue Generator::GenExpr(const std::unique_ptr<ExprNode>& expr){
 void Generator::GenStmt(const std::unique_ptr<StmtNode>& stmt){
     struct StmtVisitor{
         Generator & generator;
+
+        void operator()(const std::unique_ptr<CompoundStmtNode>& compoundStmt){
+
+          for(const auto& stmt : compoundStmt->body){
+              generator.GenStmt(stmt);
+          }
+
+          return;
+        }
         
         void operator()(const std::unique_ptr<DeclerationStmtNode>& decleration){
             llvm::Type * VarType = generator.GetTypeFromToken(decleration->type.type);

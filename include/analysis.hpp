@@ -11,7 +11,7 @@ struct SymbolInfo{
 class Analyzer{
   private:
     size_t m_scope_index = 0;
-    std::unordered_map<std::string, SymbolInfo> m_symbols;
+    // vector works like stack in this case, we push and pop scopes accordingly
     std::vector<std::unordered_map<std::string, SymbolInfo>> m_scopes;
     std::vector<std::string> m_errors;
 

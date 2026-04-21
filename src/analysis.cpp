@@ -25,26 +25,59 @@ void Analyzer::AnalyzeStmt(const std::unique_ptr<StmtNode>& stmt){
   struct StmtVisitor{
     Analyzer& self;
 
+    void operator()(const std::unique_ptr<CompoundStmtNode>& compoundStmt){
+      self.m_scopes.push_back({});
+
+      for(const auto& stmt : compoundStmt->body){
+        self.AnalyzeStmt(stmt);
+      }
+
+      self.m_scopes.pop_back();
+
+      return;
+    }
+
     // handles type checking and checks if variables exist and if its initialized
     void operator()(const std::unique_ptr<AssignmentNode>& assignment){
       auto variableName = assignment->identifier.value.value();
+      bool isDeclared = false;
 
-      if(self.m_scopes.back().find(variableName) == self.m_scopes.back().end()){
+      for(const auto& scope : self.m_scopes){
+        if(scope.find(variableName) != scope.end()){
+          isDeclared = true;
+        }
+
+      }
+
+      if(isDeclared == false){
         self.m_errors.push_back("error: variable '" + variableName + "' was not declared in this scope \n");
       }
+
+
       return;
     }
 
     void operator()(const std::unique_ptr<IfStmtNode>& ifstmt){
+      self.m_scopes.push_back({});
+
+      for(const auto& stmt : ifstmt->thenBody){
+        self.AnalyzeStmt(stmt);
+      }
+
+      self.m_scopes.pop_back();
+
       return;
     }
 
     void operator()(const std::unique_ptr<FunctionNode>& function){
-      // create a new scope?
       self.m_scopes.push_back({});
+
       for(const auto& stmt : function->body){
         self.AnalyzeStmt(stmt);
       }
+
+      self.m_scopes.pop_back();
+
       return;
     }
 

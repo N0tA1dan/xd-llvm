@@ -404,6 +404,19 @@ std::unique_ptr<FunctionNode> Parser::ParseFunc(){
     return func;
 }
 
+std::unique_ptr<CompoundStmtNode> Parser::ParseCompoundStmt(){
+  std::unique_ptr<CompoundStmtNode> compoundStmt = std::make_unique<CompoundStmtNode>();
+
+  while(peek().has_value() && peek().value().type != TokenType::CLOSE_BRACKET){
+      compoundStmt->body.push_back(ParseStmt());
+
+  }
+
+  TryEat(TokenType::CLOSE_BRACKET);
+
+  return compoundStmt;
+
+}
 std::unique_ptr<DeclerationStmtNode> Parser::ParseDecleration(){
     auto decleration = std::make_unique<DeclerationStmtNode>();
 
@@ -478,10 +491,22 @@ std::unique_ptr<StmtNode> Parser::ParseStmt(){
 
     auto current = peek();
     if (!current.has_value()) {
-        std::cerr << "Error: unexpected end of input while parsing statement" << std::endl;
+        std::cerr << "error: unexpected end of input while parsing statement" << std::endl;
         exit(EXIT_FAILURE);
     }
 
+    // compound statements
+    if(peek().value().type == TokenType::OPEN_BRACKET){
+      eat(); // eats open bracket
+      auto compoundStmt = ParseCompoundStmt();
+
+      if(!compoundStmt){
+        std::cerr << "error: couldnt parse compoundStmt" << std::endl;
+        exit(EXIT_FAILURE);
+      }
+
+      stmt->var = std::move(compoundStmt);
+    }
 
     // handles functions
     if(peek().value().type == TokenType::FN){

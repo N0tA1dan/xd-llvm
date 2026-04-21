@@ -46,4 +46,6 @@ x 2026-04-17 add semantic analyzer because generator is doing too much validatio
 
 2026-04-19 add a index/tracker to know where scopes are. would have to consider going back to another scope after a block
 
-2026-04-19 maybe change symbol table / scopes to a stack data structure instead of vector
+x 2026-04-19 maybe change symbol table / scopes to a stack data structure instead of vector
+
+x 2026-04-20 add compound statements and handle scopes for them

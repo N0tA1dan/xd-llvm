@@ -71,6 +71,10 @@ struct FunctionNode{
     std::vector<std::unique_ptr<StmtNode>> body;
 };
 
+struct CompoundStmtNode{
+  std::vector<std::unique_ptr<StmtNode>> body;
+};
+
 struct DeclerationStmtNode{
     Token type;
     Token identifier;
@@ -93,7 +97,7 @@ struct ReturnNode{
 };
 
 struct StmtNode{
-    std::variant<std::unique_ptr<FunctionNode>, std::unique_ptr<AssignmentNode>, std::unique_ptr<IfStmtNode>, std::unique_ptr<DeclerationStmtNode>> var;
+    std::variant<std::unique_ptr<FunctionNode>, std::unique_ptr<AssignmentNode>, std::unique_ptr<IfStmtNode>, std::unique_ptr<DeclerationStmtNode>, std::unique_ptr<CompoundStmtNode>> var;
 };
 
 
@@ -123,6 +127,7 @@ class Parser{
         std::unique_ptr<ExprNode> ParseEquality();
         std::unique_ptr<ProtoTypeNode> ParseProto();
         std::unique_ptr<FunctionNode> ParseFunc();
+        std::unique_ptr<CompoundStmtNode> ParseCompoundStmt();
         std::unique_ptr<AssignmentNode> ParseAssignmentStmt();
         std::unique_ptr<IfStmtNode> ParseIfStmt();
         std::unique_ptr<DeclerationStmtNode> ParseDecleration();
