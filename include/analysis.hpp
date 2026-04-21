@@ -20,6 +20,7 @@ class Analyzer{
     Analyzer() = default; 
     
 
+    void AnalyzePrimaryExpr(const std::unique_ptr<PrimaryExprNode>& primaryExpr);
     void AnalyzeExpr(const std::unique_ptr<ExprNode>& expr);
     void AnalyzeStmt(const std::unique_ptr<StmtNode>& stmt);
     bool Analyze(const std::unique_ptr<ProgNode>& prog);

@@ -1,5 +1,31 @@
 #include "analysis.hpp"
 
+void Analyzer::AnalyzePrimaryExpr(const std::unique_ptr<PrimaryExprNode>& primaryExpr){
+  struct PrimaryExprVisitor{
+    Analyzer& self;
+
+    void operator()(const std::unique_ptr<IntLitNode>& intLit){
+
+    }
+
+    void operator()(const std::unique_ptr<FloatLitNode>& floatLit){
+
+    }
+
+    void operator()(const std::unique_ptr<IdentNode>& ident){
+
+    }
+
+    void operator()(const std::unique_ptr<ExprNode>& expr){
+
+    }
+
+
+  };
+
+  std::visit(PrimaryExprVisitor{*this}, primaryExpr->var);
+}
+
 void Analyzer::AnalyzeExpr(const std::unique_ptr<ExprNode>& expr){
   struct ExprVisitor{
     Analyzer& self;
