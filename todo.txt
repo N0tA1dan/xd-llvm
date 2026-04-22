@@ -40,7 +40,7 @@ x 2026-04-17 add semantic analyzer because generator is doing too much validatio
 
 2026-04-18 clean up generator.cpp. semantic analyzer should clear all the errors
 
-2026-04-18 figure out scoping for analysis and generator possibly using vectors
+x 2026-04-18 figure out scoping for analysis and generator possibly using vectors
 
 2026-04-19 clean up generator.cpp 
 

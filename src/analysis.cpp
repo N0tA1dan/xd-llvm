@@ -5,18 +5,27 @@ void Analyzer::AnalyzePrimaryExpr(const std::unique_ptr<PrimaryExprNode>& primar
     Analyzer& self;
 
     void operator()(const std::unique_ptr<IntLitNode>& intLit){
+      return;
 
     }
 
     void operator()(const std::unique_ptr<FloatLitNode>& floatLit){
-
-    }
+      return;
+}
 
     void operator()(const std::unique_ptr<IdentNode>& ident){
+      std::string variableName = ident->val.value.value();
 
+      
+      if(self.m_scopes.back().find(variableName) == self.m_scopes.back().end()){
+        self.m_errors.push_back("error: varibale '" + variableName + "' was not declared in this scope \n");
+      }
+
+      return;
     }
 
     void operator()(const std::unique_ptr<ExprNode>& expr){
+      return;
 
     }
 
@@ -31,6 +40,7 @@ void Analyzer::AnalyzeExpr(const std::unique_ptr<ExprNode>& expr){
     Analyzer& self;
 
       void operator()(const std::unique_ptr<PrimaryExprNode>& primaryExpr){
+        self.AnalyzePrimaryExpr(primaryExpr);
         return;
       }
 
@@ -80,6 +90,9 @@ void Analyzer::AnalyzeStmt(const std::unique_ptr<StmtNode>& stmt){
       }
 
 
+      // checks the expression to the right of the '=' operator
+      self.AnalyzeExpr(assignment->expression);
+
       return;
     }
 
@@ -116,6 +129,11 @@ void Analyzer::AnalyzeStmt(const std::unique_ptr<StmtNode>& stmt){
         
       }else{
         self.m_scopes.back().insert({variableName, {decleration->type.type, true}});
+      }
+
+      // does checking on the expression to the right of the '=' operator
+      if(decleration->expression.has_value()){
+        self.AnalyzeExpr(decleration->expression.value());
       }
 
       return;
