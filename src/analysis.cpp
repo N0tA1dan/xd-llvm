@@ -11,7 +11,7 @@ void Analyzer::AnalyzePrimaryExpr(const std::unique_ptr<PrimaryExprNode>& primar
 
     void operator()(const std::unique_ptr<FloatLitNode>& floatLit){
       return;
-}
+    }
 
     void operator()(const std::unique_ptr<IdentNode>& ident){
       std::string variableName = ident->val.value.value();

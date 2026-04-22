@@ -105,11 +105,14 @@ struct ProgNode{
     std::vector<std::unique_ptr<StmtNode>> stmts;
 };
 
+
 class Parser{
 
     private:
         std::vector<Token> m_tokens;
         int m_index = 0; 
+
+        std::unordered_map<std::string, bool> m_userTypes;
 
         std::optional<Token> peek(int offset);
         Token eat();

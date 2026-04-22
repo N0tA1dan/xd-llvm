@@ -49,3 +49,7 @@ x 2026-04-18 figure out scoping for analysis and generator possibly using vector
 x 2026-04-19 maybe change symbol table / scopes to a stack data structure instead of vector
 
 x 2026-04-20 add compound statements and handle scopes for them
+
+2026-04-21 update grammar for language
+
+2026-04-21 add a table/map for user defined types in parser stage. this will help for structs
