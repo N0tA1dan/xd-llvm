@@ -41,7 +41,7 @@ void print_tokens(const std::vector<Token> & tokens){
                 break;
 
             case TokenType::STRING_LIT:
-                std::cout << "STRING_LIT TOKEN"<<std::endl;
+                std::cout << "STRING_LIT TOKEN: "<< token.value.value() << std::endl;
                 break;
 
             case TokenType::EQUAL:

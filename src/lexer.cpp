@@ -69,7 +69,7 @@ std::vector<Token> Lexer::lex(){
         else if(peek().value() == '"'){
           eat(); // eats first quote 
 
-          while(isalnum(peek().value())){
+          while(peek().value() != '"'){
             buffer.push_back(eat());
           }
 
