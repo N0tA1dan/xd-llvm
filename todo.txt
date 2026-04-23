@@ -53,3 +53,10 @@ x 2026-04-20 add compound statements and handle scopes for them
 2026-04-21 update grammar for language
 
 2026-04-21 add a table/map for user defined types in parser stage. this will help for structs
+
+2026-04-21 add type checking to analyzer
+
+2026-04-22 add chars and pointer types
+
+2026-04-22 add structs
+

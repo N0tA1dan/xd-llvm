@@ -29,6 +29,14 @@ struct FloatLitNode{
     Token val;
 };
 
+struct CharLitNode{
+  Token val;
+};
+
+struct StringLitNode{
+  Token val;
+};
+
 struct IdentNode{
     Token val;
 };

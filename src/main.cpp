@@ -40,6 +40,10 @@ void print_tokens(const std::vector<Token> & tokens){
                 std::cout << "FLOAT_LIT TOKEN"<<std::endl;
                 break;
 
+            case TokenType::STRING_LIT:
+                std::cout << "STRING_LIT TOKEN"<<std::endl;
+                break;
+
             case TokenType::EQUAL:
                 std::cout << "EQUAL TOKEN" << std::endl;
                 break;

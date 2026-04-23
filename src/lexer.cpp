@@ -66,6 +66,24 @@ std::vector<Token> Lexer::lex(){
             continue;
         }
 
+        else if(peek().value() == '"'){
+          eat(); // eats first quote 
+
+          while(isalnum(peek().value())){
+            buffer.push_back(eat());
+          }
+
+          if(peek().value() == '"'){
+            eat(); // eats final quote
+          }
+          
+          tokens.push_back({TokenType::STRING_LIT, buffer});
+
+          buffer.clear();
+
+          continue;
+        }
+
         // handles whitespace 
         else if(isspace(peek().value())){
             eat();
@@ -104,7 +122,7 @@ std::vector<Token> Lexer::lex(){
                     break;
 
                 case '/':
-                    if(peek(1).value() == '/') {
+                    if(peek(1).value() == '=') {
                         type = TokenType::DIV_EQ;
                         eat();
                     } else{
