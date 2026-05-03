@@ -60,3 +60,4 @@ x 2026-04-20 add compound statements and handle scopes for them
 
 2026-04-22 add structs
 
+2026-04-22 fix generator.cpp. BasicBlock::GetTerminator() is throwing an erorr and says the basic block is not "well formed"
