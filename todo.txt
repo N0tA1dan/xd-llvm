@@ -61,3 +61,5 @@ x 2026-04-20 add compound statements and handle scopes for them
 2026-04-22 add structs
 
 2026-04-22 fix generator.cpp. BasicBlock::GetTerminator() is throwing an erorr and says the basic block is not "well formed"
+
+2026-05-08 pin project to a specific llvm release. preferably llvm 21.1.8 for ease of use.

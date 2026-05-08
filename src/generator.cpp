@@ -328,7 +328,7 @@ void Generator::GenStmt(const std::unique_ptr<StmtNode>& stmt){
                 generator.GenStmt(stmt);
             }
 
-            if (Builder->GetInsertBlock()->getTerminatorOrNull() == NULL) {
+            if (Builder->GetInsertBlock()->getTerminator() == NULL) {
                 if (ReturnType->isVoidTy()) {
                     Builder->CreateRetVoid();
                 } else {
